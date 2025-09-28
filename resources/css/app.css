@@ -1,0 +1,218 @@
+/* base imports */
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    /* Light theme tokens (modern and clean) */
+    --bg: #ffffff;         /* Pure white background for normal mode */
+    --surface: #f9fafb;    /* Very light gray for cards/surfaces (gray-50 equivalent) */
+    --text: #1f2937;       /* Dark gray for body text (gray-700) */
+    --muted: #6b7280;      /* Muted text (gray-500) */
+    --brand: #3b82f6;      /* Blue-500 for primary actions */
+    --accent: #8b5cf6;     /* Purple-500 for secondary accents */
+    --success: #10b981;    /* Green-500 for success */
+    --danger: #ef4444;     /* Red-500 for danger */
+    --border: #e5e7eb;     /* Light gray border (gray-200) */
+    --shadow: 0 4px 12px rgba(0, 0, 0, 0.05); /* Subtle shadow */
+    --glass: rgba(255, 255, 255, 0.8); /* Light glass effect */
+    --radius: 0.75rem;     /* Consistent rounded corners */
+  }
+
+  /* Dark theme overrides (modern and elegant) */
+  .dark {
+    --bg: #1e293b;         /* Dark slate (gray-800) for background */
+    --surface: #2d3748;    /* Darker gray for cards (gray-700) */
+    --text: #f9fafb;       /* Light text (gray-50) */
+    --muted: #94a3b8;      /* Muted text (gray-400) */
+    --brand: #60a5fa;      /* Lighter blue-400 for contrast */
+    --accent: #a78bfa;     /* Lighter purple-400 */
+    --success: #34d399;    /* Lighter green-400 */
+    --danger: #f87171;     /* Lighter red-400 */
+    --border: #4b5563;     /* Dark gray border (gray-600) */
+    --shadow: 0 4px 12px rgba(0, 0, 0, 0.3); /* Stronger shadow in dark mode */
+    --glass: rgba(45, 55, 72, 0.9); /* Dark glass effect */
+  }
+
+  /* Apply background & text globally */
+  html, body {
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* ---------------------------
+   Small utility classes
+   --------------------------- */
+@layer components {
+  .bg-surface { background-color: var(--surface); }
+  .bg-app { background-color: var(--bg); }
+  .text-body { color: var(--text); }
+  .text-muted { color: var(--muted); }
+  .border-surface { border: 1px solid var(--border); }
+  .card {
+    background-color: var(--surface);
+    color: var(--text);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    transition: all 0.2s ease-in-out;
+  }
+
+  /* Buttons with modern styling */
+  .btn-primary {
+    background-color: var(--brand);
+    color: white;
+    padding: 0.625rem 1rem; /* Slightly larger padding */
+    border-radius: 0.5rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+  }
+  .btn-primary:hover {
+    background-color: color-mix(in srgb, var(--brand) 90%, black);
+    transform: translateY(-1px);
+  }
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.5rem 0.875rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+  }
+  .btn-ghost:hover {
+    background-color: color-mix(in srgb, var(--surface) 95%, black);
+    border-color: color-mix(in srgb, var(--border) 80%, black);
+    transform: translateY(-1px);
+  }
+  .btn-success {
+    background-color: var(--success);
+    color: white;
+    padding: 0.5rem 0.875rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+  }
+  .btn-success:hover {
+    background-color: color-mix(in srgb, var(--success) 90%, black);
+    transform: translateY(-1px);
+  }
+  .btn-danger {
+    background-color: var(--danger);
+    color: white;
+    padding: 0.5rem 0.875rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+  }
+  .btn-danger:hover {
+    background-color: color-mix(in srgb, var(--danger) 90%, black);
+    transform: translateY(-1px);
+  }
+
+  /* Updated pill with modern look */
+  .pill {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background-color: color-mix(in srgb, var(--surface) 90%, black);
+    transition: background-color 0.2s ease;
+  }
+  .pill:hover {
+    background-color: color-mix(in srgb, var(--surface) 85%, black);
+  }
+
+  /* Subtle glass effect */
+  .glass {
+    background: var(--glass);
+    backdrop-filter: blur(8px);
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    border: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
+  }
+}
+
+/* responsive tweaks (optional) */
+@layer utilities {
+  @variants responsive {
+    .lhims-container { max-width: 1100px; margin: 1.5rem auto; padding: 0 1rem; }
+  }
+}
+
+/* ---- App-specific helpers (append to your theme CSS) ---- */
+@layer components {
+  /* Status badges with modern design */
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: capitalize;
+    transition: all 0.2s ease;
+  }
+  .status-pending { background: color-mix(in srgb, var(--accent) 10%, transparent); color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent); }
+  .status-confirmed { background: color-mix(in srgb, var(--brand) 10%, transparent); color: var(--brand); border: 1px solid color-mix(in srgb, var(--brand) 20%, transparent); }
+  .status-completed { background: color-mix(in srgb, var(--success) 10%, transparent); color: var(--success); border: 1px solid color-mix(in srgb, var(--success) 20%, transparent); }
+  .status-cancelled { background: color-mix(in srgb, var(--danger) 10%, transparent); color: var(--danger); border: 1px solid color-mix(in srgb, var(--danger) 20%, transparent); }
+  .status-badge:hover {
+    filter: brightness(1.1);
+  }
+
+  /* Skeleton loader with modern animation */
+  .skeleton {
+    background: linear-gradient(90deg, color-mix(in srgb, var(--surface) 95%, black) 25%, color-mix(in srgb, var(--surface) 90%, black) 50%, color-mix(in srgb, var(--surface) 95%, black) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 0.375rem;
+    height: 1rem;
+  }
+
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  /* mobile card fallback for the appointments list */
+  .appointments-cards { display: none; }
+  @media (max-width: 768px) {
+    .appointments-table { display: none; }
+    .appointments-cards { display: block; }
+  }
+
+  /* Enhanced focus ring */
+  .focus-ring {
+    outline: none;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 20%, transparent);
+    border-radius: var(--radius);
+    transition: box-shadow 0.2s ease;
+  }
+  .focus-ring:focus-within {
+    box-shadow: 0 0 0 3px var(--brand);
+  }
+
+
+  /* search suggestion styles */
+.search-suggestion { display: flex; gap: 0.75rem; padding: 0.6rem 0.9rem; cursor: pointer; align-items: center; }
+.search-suggestion:hover, .search-suggestion[aria-selected="true"] { background-color: rgba(99,102,241,0.04); }
+.search-suggestion .avatar { width: 40px; height: 40px; border-radius: 9999px; font-weight: 600; display:flex; align-items:center; justify-content:center; background:linear-gradient(180deg,#eef2ff,#e0e7ff); color:#3730a3; }
+.search-suggestion .meta { flex:1; min-width:0; }
+.search-suggestion .meta .title { font-weight:600; font-size:0.95rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.search-suggestion .meta .subtitle { font-size:0.78rem; color: #6b7280; }
+.search-suggestion .tag { font-size:0.72rem; padding:0.18rem 0.45rem; border-radius: 999px; background:#f3f4f6; color:#374151; }
+
+/* highlight matched term */
+.suggestion-highlight { background: linear-gradient(90deg, #fff59d 0%, #fff176 100%); padding: 0 .12rem; border-radius: 2px; }
+
+}

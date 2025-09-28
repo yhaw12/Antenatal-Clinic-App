@@ -1,0 +1,43 @@
+<?php
+namespace App\Providers;
+
+use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
+use Illuminate\Support\Facades\Gate;
+use App\Models\User;
+
+class AuthServiceProvider extends ServiceProvider
+{
+    protected $policies = [
+        // 'App\Models\Model' => 'App\Policies\ModelPolicy',
+    ];
+
+    public function boot()
+    {
+        $this->registerPolicies();
+
+        // Gate: assign-role (admins only)
+        Gate::define('assign-role', function (User $user) {
+            // check spatie role or a permission
+            return method_exists($user, 'hasRole') ? $user->hasRole('admin') : false;
+        });
+
+        // Gate: manage-exports (admins only)
+        Gate::define('manage-exports', function (User $user) {
+            return method_exists($user, 'hasRole') ? $user->hasRole('admin') : false;
+        });
+
+        // Gate: view-reports (admin or role with permission)
+        Gate::define('view-reports', function (User $user) {
+            return method_exists($user, 'hasRole') ? $user->hasRole('admin') : false;
+        });
+
+        
+    Gate::define('view-activity-logs', function (User $user) {
+        return method_exists($user,'hasRole') ? $user->hasRole('admin') : false;
+    });
+
+    Gate::define('delete-activity-logs', function (User $user) {
+        return method_exists($user,'hasRole') ? $user->hasRole('admin') : false;
+    });
+    }
+}

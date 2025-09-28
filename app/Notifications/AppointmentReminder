@@ -1,0 +1,43 @@
+<?php
+
+namespace App\Notifications;
+
+use Illuminate\Bus\Queueable;
+use Illuminate\Notifications\Notification;
+use Illuminate\Notifications\Messages\NexmoMessage;
+use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Messages\BroadcastMessage;
+
+class AppointmentReminder extends Notification
+{
+    use Queueable;
+
+    protected $appointment;
+
+    public function __construct($appointment)
+    {
+        $this->appointment = $appointment;
+    }
+
+    public function via($notifiable)
+    {
+        // send SMS via custom channel or use Vonage/Twilio via route
+        return ['mail', 'database'];
+    }
+
+    public function toMail($notifiable)
+    {
+        return (new MailMessage)
+            ->line('Reminder: you have an ANC appointment scheduled for ' . $this->appointment->scheduled_date)
+            ->action('View appointment', url('/appointments/' . $this->appointment->id))
+            ->line('Reply STOP to opt-out.');
+    }
+
+    public function toArray($notifiable)
+    {
+        return [
+            'appointment_id' => $this->appointment->id,
+            'scheduled_date' => $this->appointment->scheduled_date,
+        ];
+    }
+}
