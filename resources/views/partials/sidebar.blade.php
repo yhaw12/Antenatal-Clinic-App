@@ -32,6 +32,16 @@ $menuItems = $menuItems ?? [
         'icon'      => 'M3 5a2 2 0 012-2h3a2 2 0 012 2v3a2 2 0 01-2 2H5a2 2 0 01-2-2V5z M14 7h7v10a2 2 0 01-2 2h-5',
         'tooltip'   => 'Call history'
     ],
+
+    [
+    'route'     => route('daily-queue'),
+    'active'    => 'daily-queue*',
+    'label'     => 'daily-queue',
+    'iconClass' => 'w-5 h-5',
+    'icon'      => 'M3 5a2 2 0 012-2h3a2 2 0 012 2v3a2 2 0 01-2 2H5a2 2 0 01-2-2V5z M14 7h7v10a2 2 0 01-2 2h-5',
+    'tooltip'   => 'Attendance history'
+    ],
+
     [
         'route'     => route('reports.index'),
         'active'    => 'reports.*',

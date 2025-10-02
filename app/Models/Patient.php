@@ -42,19 +42,26 @@ class Patient extends Model
      * name_search: lowercased concat of first & last name; phone_search: digits-only phone.
      */
     protected static function booted()
-    {
-        static::saving(function ($patient) {
-            $plainName = trim(($patient->first_name ?? '') . ' ' . ($patient->last_name ?? ''));
-            // normalize: lowercase and collapse whitespace
-            $patient->name_search = $plainName ? mb_strtolower(preg_replace('/\s+/', ' ', $plainName)) : null;
+{
+    static::saving(function ($patient) {
+        // Use the model accessors: encrypted casts decrypt on get, and if the properties were just set
+        // they will be plain values — this approach avoids calling decrypt() directly (which can throw).
+        $plainFirst = $patient->first_name ?? '';
+        $plainLast  = $patient->last_name ?? '';
 
-            // phone might be set as unformatted numeric string; standardize digits
-            $phone = $patient->phone ?? null;
-            if ($phone) {
-                // remove non digits
-                $digits = preg_replace('/\D+/', '', $phone);
-                $patient->phone_search = $digits ?: null;
-            }
-        });
-    }
+        // Build normalized name search: lowercase, collapse whitespace
+        $plainName = trim("{$plainFirst} {$plainLast}");
+        $patient->name_search = $plainName ? mb_strtolower(preg_replace('/\s+/', ' ', $plainName)) : null;
+
+        // Normalize phone: remove non-digits
+        $phone = $patient->phone ?? null;
+        if ($phone) {
+            $digits = preg_replace('/\D+/', '', $phone);
+            $patient->phone_search = $digits ?: null;
+        } else {
+            $patient->phone_search = null;
+        }
+    });
+}
+
 }

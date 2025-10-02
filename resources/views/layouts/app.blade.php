@@ -65,7 +65,7 @@
         <div class="absolute inset-0 bg-gradient-to-br from-transparent via-blue-50/20 to-emerald-50/20 dark:via-gray-900/50 dark:to-slate-900/50 pointer-events-none"></div>
         <div class="relative z-10 max-w-7xl mx-auto w-full px-4 py-2 flex flex-col lg:flex-row gap-2">
             @auth
-            <aside class="lg:w-80 flex-shrink-0 hidden lg:block transition-all duration-300" id="sidebar">
+            <aside class="lg:w-50 flex-shrink-0 hidden lg:block transition-all duration-300" id="sidebar">
                 @include('partials.sidebar')
             </aside>
             @endauth
