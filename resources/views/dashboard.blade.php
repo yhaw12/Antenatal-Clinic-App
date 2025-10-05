@@ -62,7 +62,7 @@
                         </div>
                         <input 
                             id="globalSearch" 
-                            class="w-full pl-12 pr-12 py-3 bg-white/90 dark:bg-gray-800/90 border border-gray-200 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white backdrop-blur-sm"
+                            class="w-full pl-6 pr-6 py-2 bg-white/90 dark:bg-gray-800/90 border border-gray-200 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white backdrop-blur-sm"
                             placeholder="Search patients, appointments... (Press / to focus)"
                             type="text"
                             autocomplete="off"
@@ -922,6 +922,18 @@
         `;
       }
 
+      let phoneInfo = '';
+      if (item.phone) {
+        phoneInfo = `
+          <span class="flex items-center">
+            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+            </svg>
+            ${escapeHtml(item.phone)}
+          </span>
+        `;
+      }
+
       return `
         <a href="${href}" class="block p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
           <div class="flex items-start justify-between">
@@ -931,29 +943,11 @@
                 ${appointmentInfo}
               </div>
               <div class="mt-1 flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
-                ${item.phone ? `
-                  <span class="flex items-center">
-                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
-                    </svg>
-                    ${escapeHtml(item.phone)}
-                  </span>
-                ` : ''}
-                ${item.hospital_number ? `
-                  <span class="flex items-center">
-                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"/>
-                    </svg>
-                    ${escapeHtml(item.hospital_number)}
-                  </span>
-                ` : ''}
+                ${phoneInfo}
+                
               </div>
             </div>
-            <div class="ml-4">
-              <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                ${escapeHtml(item.initials || 'P')}
-              </div>
-            </div>
+            
           </div>
         </a>
       `;
@@ -1007,6 +1001,8 @@
         }
 
         const json = await res.json();
+        console.log('SEARCH', { url: url, term: q, response: json });
+
         renderResults(Array.isArray(json) ? json : []);
       } catch (err) {
         console.error('Search error:', err);

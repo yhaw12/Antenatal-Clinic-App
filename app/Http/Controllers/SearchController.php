@@ -16,112 +16,100 @@ class SearchController extends Controller
      *  - date (optional) to prefer appointments on that date
      */
     public function patients(Request $request)
-    {
-        $term = trim((string) $request->query('term', ''));
-        if (mb_strlen($term) < 1) {
-            return response()->json([], 200);
+{
+    $term = trim((string) $request->query('term', ''));
+    if (mb_strlen($term) < 1) {
+        return response()->json([], 200);
+    }
+
+    $date = $request->query('date', null);
+
+    // normalize search term for name_search
+    $termNormalized = mb_strtolower(preg_replace('/\s+/', ' ', $term));
+    $digits = preg_replace('/\D+/', '', $term);
+
+    try {
+        $query = Patient::query();
+
+        if ($date) {
+            $query->whereHas('appointments', function ($q) use ($date) {
+                $q->whereDate('date', $date);
+            });
         }
 
-        $date = $request->query('date', null);
+        $query->with(['appointments' => function ($q) use ($date) {
+            if ($date) $q->whereDate('date', $date)->orderBy('time');
+            else $q->orderByDesc('date')->orderByDesc('time');
+            $q->limit(1);
+        }]);
 
-        $termNormalized = mb_strtolower($term);
-        $digits = preg_replace('/\D+/', '', $term);
+        $query->where(function ($q) use ($termNormalized, $digits, $term) {
+            $q->where('name_search', 'like', "%{$termNormalized}%");
+            if ($digits !== '') {
+                $q->orWhere('phone_search', 'like', "%{$digits}%");
+            }
+            $q->orWhere('hospital_number', 'like', "%{$term}%")
+              ->orWhere('id_number', 'like', "%{$term}%");
+        });
 
-        try {
-            $query = Patient::query();
+        $patients = $query->limit(12)->get();
 
-            // If date provided, restrict to patients who have an appointment on that date
-            if ($date) {
-                $query->whereHas('appointments', function ($q) use ($date) {
-                    $q->whereDate('date', $date);
-                });
+        $results = $patients->map(function ($p) {
+            // try to decrypt for display; if decrypt fails, fallback to name_search prettified
+            $first = null; $last = null; $phone = null;
+            try { $first = $p->first_name; } catch (\Throwable $e) { /* ignore */ }
+            try { $last  = $p->last_name;  } catch (\Throwable $e) { /* ignore */ }
+            try { $phone = $p->phone;      } catch (\Throwable $e) { /* ignore */ }
+
+            if (empty($first) && empty($last) && !empty($p->name_search)) {
+                $parts = preg_split('/\s+/', $p->name_search);
+                $parts = array_map(function ($n) {
+                    return mb_convert_case($n, MB_CASE_TITLE, "UTF-8");
+                }, $parts);
+                $first = $parts[0] ?? null;
+                $last  = count($parts) > 1 ? $parts[count($parts)-1] : null;
             }
 
-            $query->with(['appointments' => function ($q) use ($date) {
-                if ($date) {
-                    $q->whereDate('date', $date)->orderBy('time');
-                } else {
-                    $q->orderByDesc('date')->orderByDesc('time');
-                }
-                $q->limit(1);
-            }]);
+            $appt = optional($p->appointments->first());
+            $apptTime = null;
+            $apptDate = null;
+            if ($appt && $appt->time) {
+                try { $apptTime = \Illuminate\Support\Carbon::parse($appt->time)->format('h:i A'); } catch (\Throwable $e) { $apptTime = $appt->time; }
+            }
+            if ($appt && $appt->date) {
+                try { $apptDate = \Illuminate\Support\Carbon::parse($appt->date)->toDateString(); } catch (\Throwable $e) { $apptDate = $appt->date; }
+            }
 
-            // Use the helper search columns first (these are plain text, not encrypted)
-            $query->where(function ($q) use ($termNormalized, $digits, $term) {
-                $q->where('name_search', 'like', "%{$termNormalized}%");
+            $fullName = trim(($first ?? '') . ' ' . ($last ?? ''));
+            if (!$fullName) {
+                $fullName = $p->name_search ? mb_convert_case($p->name_search, MB_CASE_TITLE, "UTF-8") : 'Unknown';
+            }
 
-                if ($digits !== '') {
-                    $q->orWhere('phone_search', 'like', "%{$digits}%");
-                }
+            return [
+                'id' => $p->id,
+                'patient_id' => $p->id,
+                'label' => $fullName,
+                'first_name' => $first,
+                'last_name' => $last,
+                'initials' => strtoupper(mb_substr((string)($first ?? ''),0,1) . mb_substr((string)($last ?? ''),0,1)),
+                'phone' => $phone,
+                'hospital_number' => $p->hospital_number,
+                'appointment_id' => $appt->id ?? null,
+                'appointment_date' => $apptDate,
+                'appointment_time' => $apptTime,
+            ];
+        })->values();
 
-                // fallback: hospital_number / id_number (not encrypted)
-                $q->orWhere('hospital_number', 'like', "%{$term}%");
-                $q->orWhere('id_number', 'like', "%{$term}%");
-            });
-
-            $patients = $query->limit(12)->get();
-
-            $results = $patients->map(function ($p) {
-                // Defensive access to encrypted attributes
-                $first = null; $last = null; $phone = null;
-                try { $first = $p->first_name; } catch (\Throwable $e) { /* decrypt failed => null */ }
-                try { $last  = $p->last_name;  } catch (\Throwable $e) { /* decrypt failed => null */ }
-                try { $phone = $p->phone;      } catch (\Throwable $e) { /* decrypt failed => null */ }
-
-                // If name parts are missing, fallback to name_search (prettified)
-                if (empty($first) && empty($last) && !empty($p->name_search)) {
-                    $parts = preg_split('/\s+/', $p->name_search);
-                    $parts = array_map(function ($n) {
-                        return mb_convert_case($n, MB_CASE_TITLE, "UTF-8");
-                    }, $parts);
-                    $first = $first ?: ($parts[0] ?? null);
-                    $last  = $last  ?: (count($parts) > 1 ? $parts[count($parts)-1] : null);
-                }
-
-                $appt = optional($p->appointments->first());
-                $apptTime = null;
-                $apptDate = null;
-                if ($appt && $appt->time) {
-                    try { $apptTime = Carbon::parse($appt->time)->format('h:i A'); } catch (\Throwable $e) { $apptTime = $appt->time; }
-                }
-                if ($appt && $appt->date) {
-                    try { $apptDate = Carbon::parse($appt->date)->toDateString(); } catch (\Throwable $e) { $apptDate = $appt->date; }
-                }
-
-                $fullName = trim(($first ?? '') . ' ' . ($last ?? ''));
-                if (!$fullName) {
-                    // final fallback
-                    $fullName = $p->name_search ? mb_convert_case($p->name_search, MB_CASE_TITLE, "UTF-8") : 'Unknown';
-                }
-
-                return [
-                    'id' => $p->id,
-                    'patient_id' => $p->id,
-                    'label' => $fullName ?: 'Unknown',
-                    'first_name' => $first,
-                    'last_name' => $last,
-                    'initials' => strtoupper(substr((string)($first ?? ''), 0, 1) . substr((string)($last ?? ''), 0, 1)),
-                    'phone' => $phone,
-                    'hospital_number' => $p->hospital_number,
-                    'appointment_id' => $appt->id ?? null,
-                    'appointment_date' => $apptDate,
-                    'appointment_time' => $apptTime,
-                ];
-            })->values();
-
-            // return array even if empty
-            return response()->json($results, 200);
-        } catch (\Throwable $e) {
-            // Log full exception for debugging, but return an empty array (frontend won't show "Search failed")
-            Log::error('Patient search error', [
-                'term' => $term,
-                'date' => $date,
-                'exception' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-
-            // Return empty array (keep status 200 to avoid the frontend "Search failed" UI)
-            return response()->json([], 200);
-        }
+        return response()->json($results, 200);
+    } catch (\Throwable $e) {
+        \Illuminate\Support\Facades\Log::error('Patient search error', [
+            'term' => $term,
+            'date' => $date,
+            'exception' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+        ]);
+        return response()->json([], 200);
     }
+}
+
 }

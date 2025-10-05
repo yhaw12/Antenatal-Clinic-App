@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('patients', function (Blueprint $table) {
             $table->id();
             // encrypted fields stored as normal strings
-            $table->string('first_name')->nullable(false);
+            $table->string('first_name');
             $table->string('last_name')->nullable();
             $table->string('folder_no')->nullable();
             $table->string('phone')->nullable();
