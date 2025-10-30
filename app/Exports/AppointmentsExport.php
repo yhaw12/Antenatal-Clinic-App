@@ -3,36 +3,56 @@
 namespace App\Exports;
 
 use App\Models\Appointment;
-use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Concerns\WithMapping;
 
-class AppointmentsExport implements FromCollection, WithHeadings
+class AppointmentsExport implements FromQuery, WithHeadings, WithMapping
 {
-    protected $filters;
+    protected $from;
+    protected $to;
+    protected $status;
 
-    public function __construct($filters)
+    public function __construct($from, $to, $status = null)
     {
-        $this->filters = $filters;
+        $this->from = $from;
+        $this->to = $to;
+        $this->status = $status;
     }
 
-    public function collection()
+    public function query()
     {
-        return Appointment::with('patient')
-            ->whereBetween('scheduled_date', [$this->filters['date_from'], $this->filters['date_to']])
-            ->get()
-            ->map(function ($appt) {
-                return [
-                    'id' => $appt->id,
-                    'patient_name' => $appt->patient->first_name . ' ' . $appt->patient->last_name,
-                    'scheduled_date' => $appt->scheduled_date,
-                    'status' => $appt->status,
-                    // Add more fields as needed
-                ];
-            });
+        $q = Appointment::with('patient')
+            ->whereBetween('date', [$this->from, $this->to])
+            ->orderBy('date');
+
+        if (!empty($this->status)) {
+            if ($this->status === 'present') {
+                $q->whereIn('status', ['queued','in_room','seen','present']);
+            } else {
+                $q->where('status', $this->status);
+            }
+        }
+
+        return $q;
+    }
+
+    public function map($row): array
+    {
+        return [
+            $row->id,
+            $row->date,
+            $row->time,
+            $row->patient_id,
+            optional($row->patient)->first_name,
+            optional($row->patient)->last_name,
+            $row->status,
+            $row->notes,
+        ];
     }
 
     public function headings(): array
     {
-        return ['ID', 'Patient Name', 'Scheduled Date', 'Status'];
+        return ['id','date','time','patient_id','patient_first_name','patient_last_name','status','notes'];
     }
 }

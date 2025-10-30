@@ -12,6 +12,7 @@ use App\Http\Controllers\DashboardWebController;
 use App\Http\Controllers\ReferralWebController;
 use App\Http\Controllers\ReportWebController;
 use App\Http\Controllers\ExportWebController;
+use App\Http\Controllers\NotificationApiController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ScheduleWebController;
 use App\Http\Controllers\SearchController;
@@ -89,6 +90,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/patients/{id}', [PatientWebController::class, 'show'])->name('patients.show');
     Route::get('/patients/{id}/edit', [PatientWebController::class, 'edit'])->name('patients.edit');
     Route::put('/patients/{id}', [PatientWebController::class, 'update'])->name('patients.update');
+    Route::get('/patients/daily-attendance', [DailyQueueController::class, 'index'])
+         ->name('patients.daily_attendance');
 
     // Patients search (AJAX) - SearchController::patients handles encrypted-field fallbacks
     Route::get('/patients/search', [SearchController::class, 'patients'])->name('patients.search');
@@ -105,11 +108,14 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/daily-queue', [DailyQueueController::class, 'index'])->name('daily-queue');
     Route::post('/daily-queue/mark-present', [DailyQueueController::class, 'markPresent'])->name('daily-queue.mark-present');
     Route::post('/daily-queue/mark-absent', [DailyQueueController::class, 'markAbsent'])->name('daily-queue.mark-absent');
+    Route::get('/daily-queue/search', [DailyQueueController::class, 'search'])->name('daily-queue.search');
 
     // ---- Call Logs ----
-    Route::get('/call-logs', [CallLogWebController::class, 'index'])->name('call-logs');
-    Route::get('/call-logs/new', [CallLogWebController::class, 'create'])->name('call-logs.new');
-    Route::post('/call-logs', [CallLogWebController::class, 'store'])->name('call-logs.store');
+    Route::get('/call-logs', [CallLogWebController::class, 'index'])->name('call_logs');
+    Route::get('/call-logs/create', [CallLogWebController::class, 'create'])->name('call_logs.create');
+    Route::post('/call-logs', [CallLogWebController::class, 'store'])->name('call_logs.store');
+
+
 
     // ---- Referrals ----
     Route::get('/referrals', [ReferralWebController::class, 'index'])->name('referrals.index');
@@ -123,7 +129,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
     // If you implement uploadAvatar later, add its route here:
-    // Route::post('/profile/avatar', [ProfileController::class, 'uploadAvatar'])->name('profile.avatar');
+     Route::post('/profile/avatar', [ProfileController::class, 'uploadAvatar'])->name('profile.avatar');
 
     // ---- Settings ----
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
@@ -145,11 +151,11 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/reports/generate', [ReportWebController::class, 'generate'])->name('reports.generate');
     
 
-    Route::middleware(['can:manage-exports'])->group(function () {
+    // Route::middleware(['can:manage-exports'])->group(function () {
         Route::get('/exports', [ExportWebController::class, 'index'])->name('exports.index');
         Route::post('/exports/queue', [ExportWebController::class, 'queue'])->name('exports.queue');
         Route::get('/exports/history', [ExportWebController::class, 'history'])->name('exports.history');
-    });
+        Route::get('/exports/download/{filename}', [ExportWebController::class, 'download'])->name('exports.download');
 
     // ---- Activity logs (admin) ----
     Route::middleware(['can:view-activity-logs'])->prefix('admin')->group(function () {
@@ -194,7 +200,21 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/activity-logs/{userActivityLog}', [UserActivityLogController::class, 'show'])->name('admin.activity-logs.show');
             Route::delete('/activity-logs/{userActivityLog}', [UserActivityLogController::class, 'destroy'])->name('admin.activity-logs.destroy');
         });
-    // });
+    
+        Route::get('/notifications/api/latest', [NotificationApiController::class, 'latest'])
+        ->name('notifications.api.latest');
+
+        Route::post('/notifications/api/mark-read', [NotificationApiController::class, 'markRead'])
+            ->name('notifications.api.markRead');
+
+        Route::post('/notifications/api/clear', [NotificationApiController::class, 'clear'])
+            ->name('notifications.api.clear');
+
+        // Optional: use AlertController::dismissAll (or create a dedicated endpoint)
+        Route::post('/notifications/api/mark-all', [AlertController::class, 'dismissAll'])
+            ->name('notifications.api.markAll');
+
+    
 });
 
 

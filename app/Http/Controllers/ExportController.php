@@ -1,42 +1,102 @@
 <?php
 namespace App\Http\Controllers;
 
-use App\Models\ExportRecord;
-use App\Models\Appointment;
 use Illuminate\Http\Request;
-use Maatwebsite\Excel\Excel;
-use App\Exports\AppointmentsExport;
+use App\Models\Appointment;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Bus;
+use Carbon\Carbon;
 
-class ExportController extends Controller
+class ExportWebController extends Controller
 {
-    // Admin calls this to queue an export. Returns job id
-    public function queueExport(Request $request)
+    /**
+     * Queue or immediately generate export.
+     * Currently: immediate CSV download for small ranges.
+     */
+    public function queue(Request $request)
     {
-        $this->authorize('manage-exports');
-
         $data = $request->validate([
-            'date_from' => 'required|date',
-            'date_to' => 'required|date'
+            'from' => 'required|date',
+            'to' => 'required|date',
+            'format' => 'required|in:excel,csv',
         ]);
 
-        $filters = ['date_from' => $data['date_from'], 'date_to' => $data['date_to']];
+        $from = Carbon::parse($data['from'])->toDateString();
+        $to   = Carbon::parse($data['to'])->toDateString();
+        $format = $data['format'];
 
-        // Push a job to queue that will generate excel and encrypt it (job class not included here)
-        $jobId = (string) Str::uuid();
+        // Small safety guard: for very large ranges prefer queueing
+        $count = Appointment::whereBetween('date', [$from, $to])->count();
+        if ($count > 5000 && $format === 'excel') {
+            // Ideally dispatch a queued job to build the file and persist
+            return back()->with('error', 'Large export requested — please use background export (not implemented).');
+        }
 
-        // store a placeholder export record
-        $record = ExportRecord::create([
-            'exported_by' => $request->user()->id,
-            'file_path' => 'exports/pending_' . $jobId . '.enc',
-            'filters' => $filters,
-            'encrypted' => true
-        ]);
+        if ($format === 'csv') {
+            // stream CSV directly
+            $filename = 'appointments_' . now()->format('Ymd_His') . '.csv';
 
-        // IMPORTANT: in production dispatch a job to create & encrypt the file and update record.file_path when done.
+            $response = new StreamedResponse(function () use ($from, $to) {
+                $handle = fopen('php://output', 'w');
+                // header row
+                fputcsv($handle, ['id','patient_id','patient_name','date','time','status','notes','created_at']);
 
-        return response()->json(['ok' => true, 'export_id' => $record->id, 'message' => 'Export queued']);
+                Appointment::with('patient')
+                    ->whereBetween('date', [$from, $to])
+                    ->orderBy('date')
+                    ->orderBy('time')
+                    ->chunk(500, function($rows) use ($handle) {
+                        foreach ($rows as $row) {
+                            $patientName = optional($row->patient)->first_name . ' ' . optional($row->patient)->last_name;
+                            fputcsv($handle, [
+                                $row->id,
+                                $row->patient_id,
+                                $patientName,
+                                $row->date,
+                                $row->time,
+                                $row->status,
+                                $row->notes,
+                                $row->created_at,
+                            ]);
+                        }
+                    });
+
+                fclose($handle);
+            });
+
+            $response->headers->set('Content-Type', 'text/csv; charset=UTF-8');
+            $response->headers->set('Content-Disposition', "attachment; filename=\"$filename\"");
+            return $response;
+        }
+
+        if ($format === 'excel') {
+            // Option A: if you have maatwebsite/excel installed, use it here.
+            // Option B: fallback to CSV download and suggest user install the package.
+            return back()->with('error', 'Excel export requested but not implemented. Install maatwebsite/excel for XLSX support: composer require maatwebsite/excel');
+        }
+
+        return back()->with('error', 'Unsupported export format');
+    }
+
+    /**
+     * Simple exports history placeholder (improve by storing export jobs)
+     */
+    public function history()
+    {
+        // TODO: replace with the ExportJob model or filesystem listing
+        $history = collect([]); // placeholder
+        return view('exports.history', compact('history'));
+    }
+
+    /**
+     * Stream a previously stored file from storage (if you implement queued exports).
+     */
+    public function download($filename)
+    {
+        if (!Storage::disk('local')->exists("exports/{$filename}")) {
+            abort(404);
+        }
+        return response()->download(storage_path("app/exports/{$filename}"));
     }
 }

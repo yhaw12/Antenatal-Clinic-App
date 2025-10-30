@@ -25,7 +25,17 @@ class ReportWebController extends Controller
         $data = ['from' => $fromStr, 'to' => $toStr, 'status' => $status];
         $report = $this->getReportData($from, $to, $status);
 
-        return view('reports.index', array_merge($data, $report));
+        // ensure comparison always exists (null when not comparing months)
+        return view('reports.index', [
+        'from' => $fromStr,
+        'to' => $toStr,
+        'status' => $status,
+        'appts' => $report['appts'] ?? (new \Illuminate\Pagination\LengthAwarePaginator(collect([]), 0, 25)),
+        'kpis' => $report['kpis'] ?? ['total' => 0, 'present' => 0, 'notArrived' => 0],
+        'chart' => $report['chart'] ?? ['labels' => [], 'counts' => []],
+        'comparison' => null,
+    ]);
+
     }
 
     public function generate(Request $request)

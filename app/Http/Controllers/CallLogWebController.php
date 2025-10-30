@@ -12,16 +12,94 @@ class CallLogWebController extends Controller
 {
     public function index(Request $request)
     {
+        // incoming filters
         $date = $request->query('date', null);
+        $period = $request->query('period', 'week'); // 'week' | 'month'
+        $pageSize = 40;
 
-        $query = CallLog::with('patient')->orderByDesc('call_time');
+        // Base logs query (apply optional date filter for single-day view)
+        $logsQuery = CallLog::with('patient')->orderByDesc('call_time');
         if ($date) {
-            $query->whereDate('call_time', $date);
+            $logsQuery->whereDate('call_time', $date);
         }
 
-        $logs = $query->paginate(40);
-        return view('call_logs.index', compact('logs'));
+        $logs = $logsQuery->paginate($pageSize)->appends($request->query());
+
+        // Determine week and month ranges (ISO week: monday->sunday)
+        $today = \Illuminate\Support\Carbon::today();
+        $weekStart = $today->copy()->startOfWeek(); // monday
+        $weekEnd = $today->copy()->endOfWeek();     // sunday
+
+        $monthStart = $today->copy()->startOfMonth();
+        $monthEnd = $today->copy()->endOfMonth();
+
+        // If user passed a date, pivot ranges around that date
+        if ($date) {
+            try {
+                $pivot = \Illuminate\Support\Carbon::parse($date);
+                $weekStart = $pivot->copy()->startOfWeek();
+                $weekEnd = $pivot->copy()->endOfWeek();
+                $monthStart = $pivot->copy()->startOfMonth();
+                $monthEnd = $pivot->copy()->endOfMonth();
+            } catch (\Throwable $e) {
+                // ignore parse errors and continue with today
+            }
+        }
+
+        // Calls made counts for ranges
+        $callsWeekCount = CallLog::whereBetween('call_time', [$weekStart->startOfDay(), $weekEnd->endOfDay()])->count();
+        $callsMonthCount = CallLog::whereBetween('call_time', [$monthStart->startOfDay(), $monthEnd->endOfDay()])->count();
+
+        // Expected calls = number of appointments scheduled in the range.
+        // (If your expected definition differs, change query accordingly.)
+        $apptsWeekCount = Appointment::whereBetween('date', [$weekStart->toDateString(), $weekEnd->toDateString()])->count();
+        $apptsMonthCount = Appointment::whereBetween('date', [$monthStart->toDateString(), $monthEnd->toDateString()])->count();
+
+        // Not-called = appointments count minus calls made (floor at 0)
+        $notCalledWeekCount = max(0, $apptsWeekCount - $callsWeekCount);
+        $notCalledMonthCount = max(0, $apptsMonthCount - $callsMonthCount);
+
+        // Build lists of appointments that have no call recorded in the range.
+        // We assume CallLog may reference an appointment via appointment_id (nullable). If your schema differs adjust.
+        $calledAppointmentIdsWeek = CallLog::whereBetween('call_time', [$weekStart->startOfDay(), $weekEnd->endOfDay()])
+            ->whereNotNull('appointment_id')->pluck('appointment_id')->unique()->toArray();
+
+        $calledAppointmentIdsMonth = CallLog::whereBetween('call_time', [$monthStart->startOfDay(), $monthEnd->endOfDay()])
+            ->whereNotNull('appointment_id')->pluck('appointment_id')->unique()->toArray();
+
+        $notCalledAppointmentsWeek = Appointment::with('patient')
+            ->whereBetween('date', [$weekStart->toDateString(), $weekEnd->toDateString()])
+            ->whereNotIn('id', $calledAppointmentIdsWeek)
+            ->orderBy('date')->orderBy('time')
+            ->limit(200)
+            ->get();
+
+        $notCalledAppointmentsMonth = Appointment::with('patient')
+            ->whereBetween('date', [$monthStart->toDateString(), $monthEnd->toDateString()])
+            ->whereNotIn('id', $calledAppointmentIdsMonth)
+            ->orderBy('date')->orderBy('time')
+            ->limit(200)
+            ->get();
+
+        return view('call_logs.index', [
+            'logs' => $logs,
+            'weekStart' => $weekStart,
+            'weekEnd' => $weekEnd,
+            'monthStart' => $monthStart,
+            'monthEnd' => $monthEnd,
+            'callsWeekCount' => $callsWeekCount,
+            'callsMonthCount' => $callsMonthCount,
+            'apptsWeekCount' => $apptsWeekCount,
+            'apptsMonthCount' => $apptsMonthCount,
+            'notCalledWeekCount' => $notCalledWeekCount,
+            'notCalledMonthCount' => $notCalledMonthCount,
+            'notCalledAppointmentsWeek' => $notCalledAppointmentsWeek,
+            'notCalledAppointmentsMonth' => $notCalledAppointmentsMonth,
+            'selectedPeriod' => $period,
+            'filterDate' => $date,
+        ]);
     }
+
 
     public function create(Request $request)
     {
@@ -31,7 +109,7 @@ class CallLogWebController extends Controller
         $appointment = $appointmentId ? Appointment::with('patient')->find($appointmentId) : null;
         $patient = $patientId ? Patient::find($patientId) : null;
 
-        return view('call_logs.new', compact('appointment', 'patient'));
+        return view('call_logs.create', compact('appointment', 'patient'));
     }
 
     public function store(Request $request)

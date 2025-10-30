@@ -1,0 +1,83 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+
+class NotificationApiController extends Controller
+{
+    /**
+     * GET /notifications/api/latest
+     */
+    public function latest(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        if (! $user) {
+            // JS handles 401 gracefully; return 401 so devs can distinguish unauthenticated
+            return response()->json([], 401);
+        }
+
+        $limit = (int) $request->query('limit', 10);
+        $limit = max(1, min(50, $limit));
+
+        $notifications = $user->notifications()
+            ->orderBy('created_at', 'desc')
+            ->take($limit)
+            ->get()
+            ->map(function ($n) {
+                $data = is_array($n->data) ? $n->data : (array) $n->data;
+                return [
+                    'id' => $n->id,
+                    'read' => (bool) $n->read_at,
+                    'title' => $data['title'] ?? null,
+                    'message' => $data['message'] ?? null,
+                    'url' => $data['url'] ?? null,
+                    'created_at' => optional($n->created_at)->toIso8601String(),
+                    'human_time' => optional($n->created_at)->diffForHumans(),
+                ];
+            });
+
+        return response()->json($notifications, 200);
+    }
+
+    public function clear(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        if (! $user) {
+            return response()->json(['ok' => false], 401);
+        }
+
+        foreach ($user->unreadNotifications as $n) {
+            $n->markAsRead();
+        }
+
+        $total = $user->notifications()->count();
+
+        return response()->json(['ok' => true, 'unread' => 0, 'total' => $total], 200);
+    }
+
+    public function markRead(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        if (! $user) {
+            return response()->json(['ok' => false], 401);
+        }
+
+        $id = $request->input('id');
+        if (! $id) {
+            return response()->json(['ok' => false, 'message' => 'Missing id'], 422);
+        }
+
+        $notif = $user->notifications()->where('id', $id)->first();
+        if (! $notif) {
+            return response()->json(['ok' => false, 'message' => 'Not found'], 404);
+        }
+
+        $notif->markAsRead();
+
+        $unreadCount = $user->unreadNotifications()->count();
+
+        return response()->json(['ok' => true, 'id' => $id, 'unread' => $unreadCount], 200);
+    }
+}

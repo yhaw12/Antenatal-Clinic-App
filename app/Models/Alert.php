@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
 class Alert extends Model
 {
+
+    use HasFactory;
     protected $primaryKey = 'id';
     public $incrementing = false;
     protected $keyType = 'string';
@@ -28,7 +31,7 @@ class Alert extends Model
 
         static::creating(function ($model) {
             if (empty($model->id)) {
-                $model->id = (string) Str::uuid(); // 🔑 generate UUID automatically
+                $model->id = (string) Str::uuid(); 
             }
         });
     }

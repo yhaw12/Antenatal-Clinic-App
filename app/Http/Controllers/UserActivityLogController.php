@@ -20,25 +20,25 @@ class UserActivityLogController extends Controller
         $q = UserActivityLog::with('user')->latest();
 
         if ($request->filled('user_id')) {
-            $q->where('user_id', $request->user_id);
+            $q->where('user_id', $request->input('user_id'));
         }
         if ($request->filled('action')) {
-            $q->where('action', $request->action);
+            $q->where('action', $request->input('action'));
         }
         if ($request->filled('from')) {
-            $q->whereDate('created_at', '>=', $request->from);
+            $q->whereDate('created_at', '>=', $request->input('from'));
         }
         if ($request->filled('to')) {
-            $q->whereDate('created_at', '<=', $request->to);
+            $q->whereDate('created_at', '<=', $request->input('to'));
         }
 
         $logs = $q->paginate(30)->withQueryString();
 
-        // supply distinct action list for dropdown
         $actions = UserActivityLog::select('action')->distinct()->pluck('action');
 
         return view('admin.activity_logs.index', compact('logs','actions'));
     }
+
 
     /**
      * Show one log detail.

@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\Alert;
@@ -9,146 +10,227 @@ use Illuminate\Support\Str;
 
 class AlertController extends Controller
 {
+    public function __construct()
+    {
+        // Ensure user is authenticated for these actions (adjust as needed)
+        $this->middleware('auth');
+        // Only admins may create custom alerts
+        $this->middleware('role:admin')->only(['createCustom']);
+    }
+
+    /**
+     * Return unread alerts for the current user (or all unread for admins).
+     * Query params:
+     *  - limit (optional)
+     *  - critical_only=1 (optional)
+     */
+    /**
+ * API: Return unread alerts for the current user (or all unread for admins).
+ * Now returns alerts for the user OR global alerts (user_id IS NULL).
+ * Query params:
+ *  - limit (optional)
+ *  - critical_only=1 (optional)
+ */
     public function index(Request $request)
     {
         try {
             $user = Auth::user();
-            if (!$user) {
-                Log::warning('Unauthorized access attempt to alerts index', ['request' => $request->all()]);
-                return response()->json(['error' => 'Unauthorized'], 401)->header('Content-Type', 'application/json');
+            if (! $user) {
+                // If not authenticated, return empty list (JS will show zero). Avoid 401 to keep topbar simple.
+                return response()->json(['data' => [], 'count' => 0], 200);
             }
 
-            $preferences = $user->notification_preferences ?? [
-                'email' => true,
-                'in_app' => true,
-                'critical_only' => false,
-            ];
-
-            if (!$preferences['in_app']) {
-                return response()->json([])->header('Content-Type', 'application/json');
+            // If user's preferences disable in-app notifications, honor that
+            $prefs = is_array($user->notification_preferences) ? $user->notification_preferences : [];
+            $inApp = isset($prefs['in_app']) ? (bool) $prefs['in_app'] : true;
+            if (! $inApp) {
+                return response()->json(['data' => [], 'count' => 0], 200);
             }
 
-            $notifications = [];
-            $isAdmin = $user->hasRole('admin');
+            $limit = (int) $request->query('limit', 50);
+            $limit = $limit > 0 && $limit <= 200 ? $limit : 50;
 
-            if ($isAdmin) {
-                $alerts = Alert::where('is_read', false)->get();
+            $criticalOnly = $request->boolean('critical_only', isset($prefs['critical_only']) ? (bool) $prefs['critical_only'] : false);
+
+            // Admins see all unread alerts
+            if ($user->hasRole('admin')) {
+                $query = Alert::where('is_read', false);
             } else {
-                $alerts = Alert::where('user_id', $user->id)->where('is_read', false)->take(50)->get();
+                // user-specific OR global (user_id IS NULL)
+                $query = Alert::where('is_read', false)
+                    ->where(function ($q) use ($user) {
+                        $q->where('user_id', $user->id)->orWhereNull('user_id');
+                    });
             }
 
-            foreach ($alerts as $alert) {
-                if (!$preferences['critical_only'] || $alert->type === 'critical') {
-                    $notifications[] = [
-                        'id' => $alert->id,
-                        'message' => $alert->message,
-                        'type' => $alert->type,
-                        'url' => $alert->url ?? '#',
-                        'created_at' => $alert->created_at->toDateTimeString(),
-                    ];
+            if ($criticalOnly) {
+                $query->where('type', 'critical');
+            }
+
+            $alerts = $query->orderBy('created_at', 'desc')->limit($limit)->get();
+
+            $payload = $alerts->map(function ($alert) {
+                return [
+                    'id' => (string) $alert->id,
+                    'message' => $alert->message,
+                    'type' => $alert->type,
+                    'url' => $alert->url ?? null,
+                    'created_at' => optional($alert->created_at)->toDateTimeString(),
+                ];
+            });
+
+            // helpful count for the UI
+            $count = $alerts->count();
+
+            // Log if zero but DB has unread to help debugging (optional)
+            if ($count === 0) {
+                // quick check: are there global or user alerts at all? (non-blocking)
+                $totalUnread = Alert::where('is_read', false)->count();
+                if ($totalUnread > 0) {
+                    Log::debug('index: user has 0 results but total unread > 0', [
+                        'user_id' => $user->id,
+                        'prefs' => $prefs,
+                        'total_unread' => $totalUnread,
+                    ]);
                 }
             }
 
-            return response()->json($notifications)->header('Content-Type', 'application/json');
-        } catch (\Exception $e) {
+            return response()->json(['data' => $payload, 'count' => $count], 200);
+        } catch (\Throwable $e) {
             Log::error('Failed to fetch notifications', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
-                'user_id' => $user->id ?? 'none',
+                'user_id' => optional(Auth::user())->id,
             ]);
-            return response()->json(['error' => 'Failed to fetch notifications', 'notifications' => []], 500)
-                ->header('Content-Type', 'application/json');
+            return response()->json(['data' => [], 'count' => 0], 500);
         }
     }
 
-    public function view(Request $request)
-    {
-        try {
-            $user = Auth::user();
-            if (!$user) {
-                Log::warning('Unauthorized access attempt to alerts view');
-                return view('notifications.index', ['alerts' => collect(), 'error' => 'Unauthorized']);
-            }
 
-            $query = $user->hasRole('admin') 
-                ? Alert::where('is_read', false)
-                : Alert::where('user_id', $user->id)->where('is_read', false);
-
-            $alerts = $query->orderBy('created_at', 'desc')->paginate(10);
-
-            return view('notifications.index', compact('alerts'));
-        } catch (\Exception $e) {
-            Log::error('Failed to load alerts view', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
-            return view('notifications.index', ['alerts' => collect(), 'error' => 'Failed to load alerts']);
+    /**
+ * Web view: show notifications page (Blade)
+ * Route name: notifications.index
+ */
+public function view(Request $request)
+{
+    try {
+        $user = Auth::user();
+        if (! $user) {
+            return redirect()->route('login');
         }
-    }
 
+        $query = $user->hasRole('admin')
+            ? Alert::query()
+            : Alert::where('user_id', $user->id);
+
+        $alerts = $query->orderBy('created_at', 'desc')->paginate(20);
+
+        return view('notifications.index', compact('alerts'));
+    } catch (\Throwable $e) {
+        Log::error('Failed to load alerts view', [
+            'error' => $e->getMessage(), 'trace' => $e->getTraceAsString(),
+            'user_id' => optional(Auth::user())->id,
+        ]);
+        return view('notifications.index', ['alerts' => collect(), 'error' => 'Failed to load alerts']);
+    }
+}
+
+
+    /**
+     * Mark a single alert as read.
+     */
     public function read(Request $request, Alert $alert)
     {
         try {
             $user = Auth::user();
-            if (!$user || (!$user->hasRole('admin') && $alert->user_id != $user->id)) {
-                Log::warning('Unauthorized attempt to mark alert as read', ['user_id' => $user->id ?? null, 'alert_id' => $alert->id]);
+            if (! $user) {
                 return response()->json(['error' => 'Unauthorized'], 401);
+            }
+
+            // Admins can mark any; regular users only their own
+            if (! $user->hasRole('admin') && $alert->user_id !== $user->id) {
+                return response()->json(['error' => 'Forbidden'], 403);
             }
 
             $alert->update(['is_read' => true, 'read_at' => now()]);
 
-            return response()->json(['success' => true]);
-        } catch (\Exception $e) {
-            Log::error('Failed to mark alert as read', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            return response()->json(['success' => true], 200);
+        } catch (\Throwable $e) {
+            Log::error('Failed to mark alert read', [
+                'error' => $e->getMessage(),
+                'alert_id' => $alert->id,
+                'user_id' => optional(Auth::user())->id,
+            ]);
             return response()->json(['error' => 'Failed to mark alert as read'], 500);
         }
     }
 
+    /**
+     * Dismiss all unread alerts for the current user (or all if admin).
+     */
     public function dismissAll(Request $request)
     {
         try {
             $user = Auth::user();
-            if (!$user) {
-                Log::warning('Unauthorized attempt to dismiss all alerts');
+            if (! $user) {
                 return response()->json(['error' => 'Unauthorized'], 401);
             }
 
-            Alert::where('user_id', $user->id)
-                ->where('is_read', false)
-                ->update(['is_read' => true, 'read_at' => now()]);
+            $query = $user->hasRole('admin')
+                ? Alert::where('is_read', false)
+                : Alert::where('user_id', $user->id)->where('is_read', false);
 
-            return view('notifications.index', ['alerts' => collect(), 'message' => 'Alerts dismissed successfully']);
-        } catch (\Exception $e) {
-            Log::error('Failed to dismiss all alerts', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
-            return response()->json(['error' => 'Failed to dismiss all alerts'], 500);
+            $updated = $query->update(['is_read' => true, 'read_at' => now()]);
+
+            return response()->json(['success' => true, 'dismissed' => $updated], 200);
+        } catch (\Throwable $e) {
+            Log::error('Failed to dismiss all alerts', [
+                'error' => $e->getMessage(),
+                'user_id' => optional(Auth::user())->id,
+            ]);
+            return response()->json(['error' => 'Failed to dismiss alerts'], 500);
         }
     }
 
+    /**
+     * Create a custom alert (admin-only). JSON response.
+     * Required: type (info|warning|critical), message. Optional: user_id, url
+     */
     public function createCustom(Request $request)
     {
-        $this->middleware('role:admin');
+        $data = $request->validate([
+            'user_id' => 'nullable|exists:users,id',
+            'type' => 'required|in:info,warning,critical',
+            'message' => 'required|string|max:1000',
+            'url' => 'nullable|url',
+        ]);
 
         try {
-            $data = $request->validate([
-                'user_id' => 'nullable|exists:users,id',
-                'type' => 'required|in:info,warning,critical',
-                'message' => 'required|string|max:1000',
-                'url' => 'nullable|url',
-            ]);
-
-            Alert::create([
-                'id' => Str::uuid(),
-                'user_id' => $data['user_id'],
+            $alertData = [
+                'user_id' => $data['user_id'] ?? null,
                 'type' => $data['type'],
                 'message' => $data['message'],
-                'url' => $data['url'],
+                'url' => $data['url'] ?? null,
                 'is_read' => false,
-            ]);
+            ];
 
-            return response()->json(['success' => true, 'message' => 'Custom alert created']);
-        } catch (\Exception $e) {
+            // If model uses non-incrementing PK (UUID), set id
+            $alertModel = new Alert();
+            if (! $alertModel->getIncrementing()) {
+                $alertData['id'] = (string) Str::uuid();
+            }
+
+            $alert = Alert::create($alertData);
+
+            return response()->json(['success' => true, 'alert_id' => $alert->id], 201);
+        } catch (\Throwable $e) {
             Log::error('Failed to create custom alert', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
+                'payload' => $data,
             ]);
             return response()->json(['error' => 'Failed to create custom alert'], 500);
         }
     }
+
 }

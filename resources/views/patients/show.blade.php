@@ -3,13 +3,17 @@
 @section('title', 'Patient Details')
 
 @section('content')
-<div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-6">
-    <div class="max-w-5xl mx-auto bg-white dark:bg-gray-800 rounded-3xl shadow-xl p-6">
+<div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-6"
+     style="background: linear-gradient(180deg, var(--bg, #f8fbff) 0%, var(--surface, #ffffff) 100%); color:var(--text, #0f172a)">
+
+    <div class="max-w-5xl mx-auto bg-white dark:bg-gray-800 rounded-3xl shadow-xl p-6"
+         style="background:var(--surface, #fff); color:var(--text, #0f172a); border:1px solid var(--border, rgba(15,23,42,0.06)); box-shadow:var(--shadow,0 6px 18px rgba(2,6,23,.08))">
         <!-- Header -->
         <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
             <div class="flex items-center gap-4">
                 <!-- Avatar with optional image fallback -->
-                <div class="h-20 w-20 rounded-full overflow-hidden bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center text-indigo-700 dark:text-indigo-300 font-semibold text-2xl" aria-hidden="true">
+                <div class="h-20 w-20 rounded-full overflow-hidden bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center text-indigo-700 dark:text-indigo-300 font-semibold text-2xl"
+                     style="background:var(--avatar-bg, linear-gradient(180deg,#eef2ff,#e0e7ff)); color:var(--avatar-text,#3730a3)">
                     @if(!empty($patient->avatar_url))
                         <img src="{{ $patient->avatar_url }}" alt="{{ $patient->first_name }} avatar" class="w-full h-full object-cover">
                     @else
@@ -18,34 +22,43 @@
                 </div>
 
                 <div>
-                    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+                    <h1 class="text-2xl font-bold"
+                        style="color:var(--text, #0f172a)">
                         {{ $patient->first_name }} {{ $patient->last_name ?? '' }}
                     </h1>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">
-                        Hospital No: <span class="font-medium text-gray-700 dark:text-gray-200">{{ $patient->hospital_number ?? 'N/A' }}</span>
-                        • ID: <span class="font-medium text-gray-700 dark:text-gray-200">{{ $patient->id_number ?? 'N/A' }}</span>
+                    <p class="text-sm" style="color:var(--muted, #6b7280)">
+                        Hospital No: <span class="font-medium" style="color:var(--text, #0f172a)">{{ $patient->hospital_number ?? 'N/A' }}</span>
+                        • ID: <span class="font-medium" style="color:var(--text, #0f172a)">{{ $patient->id_number ?? 'N/A' }}</span>
                     </p>
-                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-2">
+                    <p class="text-sm mt-1 flex items-center gap-2" style="color:var(--muted, #6b7280)">
                         <svg class="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m7 4l2 2-2 2M14 10v6"/></svg>
-                        <span id="patientPhoneLabel">{{ $patient->phone ?? 'N/A' }}</span>
+                        <span id="patientPhoneLabel" style="color:var(--text, #0f172a)">{{ $patient->phone ?? 'N/A' }}</span>
                         @if($patient->phone)
-                            <button id="copyPhoneBtn" class="ml-2 text-xs px-2 py-1 border rounded text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" title="Copy phone">Copy</button>
-                            <a id="quickCallBtn" href="tel:{{ $patient->phone }}" class="ml-2 text-xs px-2 py-1 border rounded text-blue-600 dark:text-blue-300 hover:underline">Call</a>
+                            <button id="copyPhoneBtn" class="ml-2 text-xs px-2 py-1 border rounded"
+                                    style="color:var(--muted,#6b7280); border:1px solid var(--border,#e6edf3); background:var(--bg,#fff)"
+                                    title="Copy phone">Copy</button>
+                            <a id="quickCallBtn" href="tel:{{ $patient->phone }}" class="ml-2 text-xs px-2 py-1 border rounded"
+                               style="color:var(--accent, #0ea5a4); border:1px solid var(--border,#e6edf3); background:transparent"
+                               title="Call">Call</a>
                         @endif
                     </p>
                 </div>
             </div>
 
             <div class="flex items-center gap-3">
-                <a href="{{ route('patients.index') }}" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all" aria-label="Back to all patients">
+                <a href="{{ route('patients.index') }}" class="px-4 py-2 border rounded-lg text-sm font-medium"
+                   style="color:var(--text, #0f172a); border:1px solid var(--border,#e6edf3); background:var(--bg,#fff)" aria-label="Back to all patients">
                     Back
                 </a>
 
-                <a href="{{ route('appointments.create') }}?patient_id={{ $patient->id }}" class="px-4 py-2 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-lg font-medium hover:from-emerald-600 hover:to-emerald-700 shadow transition-all" aria-label="Schedule new appointment for {{ $patient->first_name }}">
+                <a href="{{ route('appointments.create') }}?patient_id={{ $patient->id }}" class="px-4 py-2 rounded-lg font-medium"
+                   style="background:linear-gradient(90deg,var(--accent, #10b981), var(--accent-2, #06b6d4)); color:#fff; box-shadow:var(--shadow,0 6px 18px rgba(2,6,23,.08))"
+                   aria-label="Schedule new appointment for {{ $patient->first_name }}">
                     Schedule Appointment
                 </a>
 
-                <button id="printBtn" class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all" title="Print appointments">
+                <button id="printBtn" class="px-4 py-2 border rounded-lg text-sm font-medium"
+                        style="color:var(--text,#0f172a); border:1px solid var(--border,#e6edf3); background:var(--bg,#fff)" title="Print appointments">
                     Print
                 </button>
             </div>
@@ -55,9 +68,14 @@
         <div class="flex flex-col md:flex-row gap-4 items-center justify-between mb-6">
             <div class="flex items-center gap-3 w-full md:w-auto">
                 <label for="searchAppointments" class="sr-only">Search appointments</label>
-                <input id="searchAppointments" type="search" placeholder="Search by notes, date or status..." class="w-full md:w-72 px-4 py-2 border rounded-lg bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-blue-500" />
+                <input id="searchAppointments" type="search"
+                       placeholder="Search by notes, date or status..."
+                       class="w-full md:w-72 px-4 py-2 border rounded-lg"
+                       style="background:var(--bg, #fff); color:var(--text,#0f172a); border:1px solid var(--border,#e6edf3);"
+                />
 
-                <select id="statusFilter" class="px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-700">
+                <select id="statusFilter" class="px-3 py-2 border rounded-lg"
+                        style="background:var(--bg, #fff); color:var(--text,#0f172a); border:1px solid var(--border,#e6edf3);">
                     <option value="all">All statuses</option>
                     <option value="queued">Queued</option>
                     <option value="in_room">In Room</option>
@@ -66,23 +84,24 @@
                     <option value="no_show">No Show</option>
                 </select>
 
-                <select id="sortBy" class="px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-700">
+                <select id="sortBy" class="px-3 py-2 border rounded-lg"
+                        style="background:var(--bg, #fff); color:var(--text,#0f172a); border:1px solid var(--border,#e6edf3);">
                     <option value="date_desc">Newest first</option>
                     <option value="date_asc">Oldest first</option>
                 </select>
             </div>
 
-            <div class="text-sm text-gray-600 dark:text-gray-300">
-                <span id="appointmentsCount">0</span> appointments
-                <span class="ml-3 text-gray-500">•</span>
-                <span class="ml-3">Last updated: <span id="lastUpdated">—</span></span>
+            <div class="text-sm" style="color:var(--muted,#6b7280)">
+                <span id="appointmentsCount" style="color:var(--text,#0f172a)">0</span> appointments
+                <span class="ml-3" style="color:var(--muted,#6b7280)">•</span>
+                <span class="ml-3" style="color:var(--muted,#6b7280)">Last updated: <span id="lastUpdated">—</span></span>
             </div>
         </div>
 
         <!-- Appointment History -->
         <section aria-labelledby="appointmentsHeading" class="mb-8">
-            <h2 id="appointmentsHeading" class="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-3">
-                <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <h2 id="appointmentsHeading" class="text-xl font-semibold mb-4 flex items-center gap-3" style="color:var(--text,#0f172a)">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                 </svg>
                 Appointment History
@@ -91,11 +110,18 @@
             <div id="appointmentsList" class="space-y-4 max-h-[34rem] overflow-y-auto pr-2">
                 {{-- Appointment cards will be rendered server-side initially and enhanced client-side --}}
                 @forelse($patient->appointments as $appointment)
-                    <article class="appointment-card p-4 rounded-lg border shadow-sm bg-gray-50 dark:bg-gray-700 dark:border-gray-700 flex justify-between items-start" data-id="{{ $appointment->id }}" data-status="{{ $appointment->status }}" data-date="{{ $appointment->date }}" data-time="{{ $appointment->time ? $appointment->time->format('H:i') : '' }}" aria-labelledby="appt-title-{{ $appointment->id }}">
+                    <article class="appointment-card p-4 rounded-lg border shadow-sm flex justify-between items-start"
+                             data-id="{{ $appointment->id }}"
+                             data-status="{{ $appointment->status }}"
+                             data-date="{{ $appointment->date }}"
+                             data-time="{{ $appointment->time ? $appointment->time->format('H:i') : '' }}"
+                             aria-labelledby="appt-title-{{ $appointment->id }}"
+                             style="background:var(--card-bg, var(--bg)); color:var(--text); border:1px solid var(--border);">
                         <div class="flex gap-4 items-start">
                             <div class="flex-shrink-0 pt-1">
                                 <!-- small icon -->
-                                <div class="h-10 w-10 rounded-lg bg-white dark:bg-gray-800 border flex items-center justify-center text-gray-600 dark:text-gray-300">
+                                <div class="h-10 w-10 rounded-lg border flex items-center justify-center"
+                                     style="background:var(--surface); border:1px solid var(--border); color:var(--muted);">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14"/>
                                     </svg>
@@ -103,21 +129,23 @@
                             </div>
 
                             <div>
-                                <h3 id="appt-title-{{ $appointment->id }}" class="text-sm font-semibold text-gray-900 dark:text-white">
+                                <h3 id="appt-title-{{ $appointment->id }}" class="text-sm font-semibold"
+                                    style="color:var(--text)">
                                     <span class="inline-block mr-2">{{ \Carbon\Carbon::parse($appointment->date)->format('d M, Y') }}</span>
-                                    <span class="text-xs text-gray-500 dark:text-gray-400">{{ $appointment->time ? $appointment->time->format('H:i') : 'Time N/A' }}</span>
+                                    <span class="text-xs" style="color:var(--muted)">{{ $appointment->time ? $appointment->time->format('H:i') : 'Time N/A' }}</span>
                                 </h3>
-                                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 max-w-prose">
+                                <p class="text-sm mt-1 max-w-prose" style="color:var(--muted)">
                                     {{ Str::limit($appointment->notes ?? 'No notes', 120) }}
                                 </p>
 
                                 <div class="mt-2 flex items-center gap-2">
-                                    <span class="status-badge inline-flex items-center gap-2 px-2 py-1 rounded-full text-xs font-semibold {{ in_array($appointment->status, ['queued','in_room','seen']) ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300' : 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' }}">
+                                    <span class="status-badge inline-flex items-center gap-2 px-2 py-1 rounded-full text-xs font-semibold"
+                                          style="{{ in_array($appointment->status, ['queued','in_room','seen']) ? 'background:var(--success-bg, #ecfdf5); color:var(--success-text,#065f46)' : 'background:var(--danger-bg,#fff1f2); color:var(--danger-text,#9f1239)' }}">
                                         {{ ucfirst(str_replace('_',' ',$appointment->status)) }}
                                     </span>
 
                                     @if($appointment->rescheduled_from)
-                                        <span class="text-xs text-yellow-700 dark:text-yellow-300">(rescheduled)</span>
+                                        <span class="text-xs" style="color:var(--muted)">(rescheduled)</span>
                                     @endif
                                 </div>
                             </div>
@@ -125,27 +153,34 @@
 
                         <div class="flex flex-col items-end gap-2">
                             <div class="flex gap-2">
-                                <button onclick="openCallModal({{ $appointment->id }}, '{{ addslashes($patient->first_name . ' ' . ($patient->last_name ?? '')) }}', '{{ $patient->phone ?? '' }}')" class="px-3 py-2 border rounded-lg text-sm hover:bg-gray-100 dark:hover:bg-gray-600" aria-label="Log call for appointment {{ $appointment->id }}">
+                                <button onclick="openCallModal({{ $appointment->id }}, '{{ addslashes($patient->first_name . ' ' . ($patient->last_name ?? '')) }}', '{{ $patient->phone ?? '' }}')"
+                                        class="px-3 py-2 border rounded-lg text-sm"
+                                        style="background:var(--bg); border:1px solid var(--border); color:var(--text) ;"
+                                        aria-label="Log call for appointment {{ $appointment->id }}">
                                     Call / Log
                                 </button>
 
-                                <button onclick="markSeen({{ $appointment->id }})" class="px-3 py-2 border rounded-lg text-sm hover:bg-gray-100 dark:hover:bg-gray-600" title="Mark as seen">
+                                <button onclick="markSeen({{ $appointment->id }})"
+                                        class="px-3 py-2 border rounded-lg text-sm"
+                                        style="background:var(--bg); border:1px solid var(--border); color:var(--text)">
                                     Mark seen
                                 </button>
                             </div>
 
-                            <div class="text-xs text-gray-500 dark:text-gray-400">
+                            <div class="text-xs" style="color:var(--muted)">
                                 <time datetime="{{ $appointment->date }}T{{ $appointment->time ? $appointment->time->format('H:i') : '00:00' }}" class="relative-date">—</time>
                             </div>
                         </div>
                     </article>
                 @empty
-                    <div class="p-8 text-center text-gray-500 dark:text-gray-400 rounded-lg border border-dashed">
+                    <div class="p-8 text-center rounded-lg border-dashed"
+                         style="background:var(--bg); border:1px dashed var(--border); color:var(--muted)">
                         <svg class="h-12 w-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
                         </svg>
                         <p class="mb-2">No appointments found.</p>
-                        <a href="{{ route('appointments.create') }}?patient_id={{ $patient->id }}" class="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg">Create first appointment</a>
+                        <a href="{{ route('appointments.create') }}?patient_id={{ $patient->id }}" class="inline-block px-4 py-2 rounded-lg"
+                           style="background:var(--accent,#3b82f6); color:#fff">Create first appointment</a>
                     </div>
                 @endforelse
             </div>
@@ -153,22 +188,24 @@
 
         <!-- Call Modal -->
         <div id="callModal" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-50 p-4" role="dialog" aria-modal="true" aria-labelledby="callModalTitle">
-            <div id="callModalPanel" class="w-full max-w-md bg-white dark:bg-gray-800 rounded-3xl shadow-2xl transform transition-all scale-95 opacity-0 overflow-hidden" role="document">
-                <div class="p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900">
+            <div id="callModalPanel" class="w-full max-w-md rounded-3xl transform transition-all scale-95 opacity-0 overflow-hidden"
+                 style="background:var(--surface); border:1px solid var(--border); color:var(--text); box-shadow:var(--shadow,0 10px 30px rgba(2,6,23,.12))" role="document">
+                <div class="p-6 border-b" style="border-bottom:1px solid var(--border); background:linear-gradient(90deg, color-mix(in srgb, var(--bg) 85%, white), color-mix(in srgb, var(--surface) 85%, white))">
                     <div class="flex items-center justify-between">
-                        <h3 id="callModalTitle" class="text-xl font-bold text-gray-900 dark:text-white">Log Call — <span id="callPatientName"></span></h3>
-                        <button id="closeCallModalBtn" class="p-2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all" aria-label="Close modal">
+                        <h3 id="callModalTitle" class="text-xl font-bold" style="color:var(--text)">Log Call — <span id="callPatientName"></span></h3>
+                        <button id="closeCallModalBtn" class="p-2 rounded-lg" style="color:var(--muted); background:transparent" aria-label="Close modal">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                         </button>
                     </div>
                 </div>
 
-                <form id="callLogForm" class="p-6 space-y-6" method="POST" action="{{ route('call-logs.store') }}">
+                <form id="callLogForm" class="p-6 space-y-6" method="POST" action="{{ route('call_logs.store') }}">
                     @csrf
                     <input type="hidden" name="appointment_id" id="callAppointmentId">
                     <div class="space-y-1">
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Call Result <span class="text-red-500">*</span></label>
-                        <select name="result" id="callResult" required class="w-full px-4 py-3 border rounded-xl bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 transition-all shadow-sm">
+                        <label class="block text-sm font-medium" style="color:var(--muted)">Call Result <span class="text-red-500">*</span></label>
+                        <select name="result" id="callResult" required class="w-full px-4 py-3 border rounded-xl"
+                                style="background:var(--bg); border:1px solid var(--border); color:var(--text);">
                             <option value="">Select outcome</option>
                             <option value="no_answer">No Answer</option>
                             <option value="rescheduled">Rescheduled</option>
@@ -178,15 +215,20 @@
                         </select>
                     </div>
                     <div>
-                        <label for="notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Notes</label>
-                        <textarea id="notes" name="notes" rows="4" class="w-full px-4 py-3 border rounded-xl bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 transition-all shadow-sm" placeholder="Additional details about the call..."></textarea>
+                        <label for="notes" class="block text-sm font-medium mb-2" style="color:var(--muted)">Notes</label>
+                        <textarea id="notes" name="notes" rows="4" class="w-full px-4 py-3 border rounded-xl"
+                                  style="background:var(--bg); border:1px solid var(--border); color:var(--text);"
+                                  placeholder="Additional details about the call..."></textarea>
                     </div>
 
-                    <div class="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
-                        <a id="telLink" href="#" class="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline transition-colors" target="_blank" rel="noopener noreferrer">📞 Call Again</a>
+                    <div class="flex items-center justify-between pt-4" style="border-top:1px solid var(--border)">
+                        <a id="telLink" href="#" class="text-sm font-medium" target="_blank" rel="noopener noreferrer"
+                           style="color:var(--accent, #3b82f6)">📞 Call Again</a>
                         <div class="flex gap-3">
-                            <button type="button" id="cancelCallBtn" class="px-6 py-3 border rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">Cancel</button>
-                            <button id="saveCallBtn" type="submit" class="px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl font-medium shadow hover:shadow-lg transition-all">
+                            <button type="button" id="cancelCallBtn" class="px-6 py-3 border rounded-xl"
+                                    style="background:var(--bg); border:1px solid var(--border); color:var(--text)">Cancel</button>
+                            <button id="saveCallBtn" type="submit" class="px-6 py-3 rounded-xl font-medium"
+                                    style="background:linear-gradient(90deg,var(--accent,#3b82f6), var(--accent-2,#06b6d4)); color:#fff; box-shadow:var(--shadow)">
                                 <span class="btn-text">Save Log</span>
                                 <svg id="btnSpinner" class="hidden animate-spin w-4 h-4 ml-2 inline-block" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
                             </button>
@@ -200,6 +242,7 @@
         <div id="toast" class="fixed right-6 bottom-6 z-50 space-y-2" aria-live="polite" aria-atomic="true"></div>
     </div>
 </div>
+
 
 @push('scripts')
 <script>

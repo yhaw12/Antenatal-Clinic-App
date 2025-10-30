@@ -25,8 +25,8 @@ $menuItems = $menuItems ?? [
         'tooltip'   => 'Patient list'
     ],
     [
-        'route'     => route('call-logs'),
-        'active'    => 'call-logs*',
+        'route'     => route('call_logs'),
+        'active'    => 'call_logs*',
         'label'     => 'Call Logs',
         'iconClass' => 'w-5 h-5',
         'icon'      => 'M3 5a2 2 0 012-2h3a2 2 0 012 2v3a2 2 0 01-2 2H5a2 2 0 01-2-2V5z M14 7h7v10a2 2 0 01-2 2h-5',
@@ -53,8 +53,7 @@ $menuItems = $menuItems ?? [
 ];
 @endphp
 
-
-<div class="space-y-1">
+<div class="space-y-1" style="border:1px solid var(--border);">
 
   <!-- Navigation Links -->
   <nav id="mobile-sidebar" class="space-y-1 px-2" aria-label="Main navigation">
@@ -62,25 +61,29 @@ $menuItems = $menuItems ?? [
       @php $isActive = request()->routeIs($item['active']); @endphp
 
       <a href="{{ $item['route'] }}"
-         class="group flex items-center px-3 py-3 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-400
-                {{ $isActive ? 'bg-blue-50 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 font-semibold' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-blue-600 dark:hover:text-blue-400' }}"
-         data-tooltip="{{ $item['tooltip'] ?? $item['label'] }}"
-         aria-label="{{ $item['label'] }}"
-         {{ $isActive ? 'aria-current=page' : '' }}
-         tabindex="0">
-
-        <div class="w-6 h-6 flex-shrink-0 flex items-center justify-center mr-3 {{ $isActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors' }}">
+        class="group flex items-center px-3 py-3 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2"
+        style="
+          color: {{ $isActive ? 'var(--brand)' : 'var(--text)' }};
+          background: {{ $isActive ? 'color-mix(in srgb, var(--brand) 8%, transparent)' : 'transparent' }};
+          border: 1px solid transparent;
+        "
+        data-tooltip="{{ $item['tooltip'] ?? $item['label'] }}"
+        aria-label="{{ $item['label'] }}"
+        {{ $isActive ? 'aria-current=page' : '' }}
+        tabindex="0">
+        <div class="w-6 h-6 flex-shrink-0 flex items-center justify-center mr-3"
+             style="{{ $isActive ? 'color:var(--brand)' : 'color:var(--muted)'}}">
           <svg class="{{ $item['iconClass'] ?? '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false" role="img">
             <title>{{ $item['label'] }} icon</title>
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $item['icon'] ?? 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' }}" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $item['icon'] ?? '' }}" />
           </svg>
         </div>
 
-        <span class="text-sm font-medium">{{ $item['label'] }}</span>
+        <span class="text-sm font-medium" style="color:inherit;">{{ ucfirst($item['label']) }}</span>
 
         @if($isActive)
           <div class="ml-auto flex items-center gap-2">
-            <div class="w-2 h-2 bg-blue-600 rounded-full animate-pulse" aria-hidden="true"></div>
+            <div class="w-2 h-2 rounded-full animate-pulse" aria-hidden="true" style="background:var(--brand)"></div>
             <span class="sr-only">Current page</span>
           </div>
         @endif
@@ -88,26 +91,31 @@ $menuItems = $menuItems ?? [
     @endforeach
   </nav>
 
+  <!-- Mobile sidebar overlay (place directly after the mobile-sidebar nav) -->
+  <div id="mobile-sidebar-overlay" aria-hidden="true" style="position:fixed; inset:0; background:rgba(0,0,0,0.35); display:none;"></div>
+
   <!-- Divider -->
   <div class="px-2 my-4">
-    <div class="border-t border-gray-200 dark:border-gray-700"></div>
+    <div style="border-top:1px solid var(--border);"></div>
   </div>
 
   <!-- Settings & Help -->
-  <div class="space-y-1 px-2">
-    <a href="{{ route('settings.index') }}" class="group flex items-center px-3 py-3 rounded-lg transition-all duration-200 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-400" aria-label="Settings">
-      <div class="w-6 h-6 flex-shrink-0 flex items-center justify-center mr-3 text-gray-500 dark:text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors">
+  <div class="space-y-1 px-2" style="background:var(--surface); color:var(--text); border:1px solid var(--border); box-shadow:var(--shadow);">
+    <a href="{{ route('settings.index') }}" class="group flex items-center px-3 py-3 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2"
+       style="color:var(--text);">
+      <div class="w-6 h-6 flex-shrink-0 flex items-center justify-center mr-3" style="color:var(--muted);">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" role="img">
           <title>Settings icon</title>
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c-.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
         </svg>
       </div>
       <span class="text-sm font-medium">Settings</span>
     </a>
 
-    <a href="#" class="group flex items-center px-3 py-3 rounded-lg transition-all duration-200 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-400" aria-label="Help">
-      <div class="w-6 h-6 flex-shrink-0 flex items-center justify-center mr-3 text-gray-500 dark:text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors">
+    <a href="#" class="group flex items-center px-3 py-3 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2"
+       style="color:var(--text);">
+      <div class="w-6 h-6 flex-shrink-0 flex items-center justify-center mr-3" style="color:var(--muted);">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" role="img">
           <title>Help icon</title>
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -117,17 +125,17 @@ $menuItems = $menuItems ?? [
     </a>
   </div>
 
-  <div class="card p-4">
+  <div class="card p-4" style="background:var(--surface); color:var(--text); border:1px solid var(--border); box-shadow:var(--shadow);">
     <h3 class="text-lg font-semibold mb-2">Login Status</h3>
     @auth
-      <div class="text-sm space-y-1 text-body">
+      <div class="text-sm space-y-1" style="color:var(--text);">
         <p><strong>User:</strong> {{ auth()->user()->name }}</p>
         <p><strong>Role:</strong> {{ auth()->user()->role ?? 'Nurse' }}</p>
         <p><strong>Since:</strong> {{ optional(auth()->user()->created_at) ? auth()->user()->created_at->diffForHumans() : now()->format('H:i') }}</p>
       </div>
       <form method="POST" action="{{ route('logout') }}" class="mt-3">
         @csrf
-        <button type="submit" class="w-full btn-danger">Logout</button>
+        <button type="submit" class="btn-danger w-full">Logout</button>
       </form>
     @else
       <a href="{{ route('login') }}" class="w-full block btn-primary text-center">Login</a>
@@ -141,17 +149,28 @@ document.addEventListener('DOMContentLoaded', () => {
   const nav = document.getElementById('mobile-sidebar');
   if (!nav) return;
 
-  // Create one tooltip element we reuse for performance and accessibility.
+  // Tooltip element (reused)
   const tooltip = document.createElement('div');
-  tooltip.className = 'absolute px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 pointer-events-none transition-opacity z-50 whitespace-nowrap';
+  tooltip.className = 'sidebar-tooltip';
   tooltip.setAttribute('role', 'tooltip');
-  tooltip.style.top = '0';
-  tooltip.style.left = '0';
-  tooltip.style.transform = 'translate(-50%, -8px)';
-  tooltip.style.transition = 'opacity 150ms ease, transform 150ms ease';
+
+  // basic styling using CSS variables so it follows theme tokens
+  Object.assign(tooltip.style, {
+    position: 'fixed',
+    padding: '6px 8px',
+    background: 'var(--text)',              // we'll invert colors below
+    color: 'var(--bg)',
+    fontSize: '12px',
+    borderRadius: '6px',
+    opacity: '0',
+    pointerEvents: 'none',
+    zIndex: '9999',
+    transform: 'translate(-50%, -6px)',
+    transition: 'opacity 150ms ease, transform 150ms ease'
+  });
+
   document.body.appendChild(tooltip);
 
-  let tooltipVisible = false;
   let hideTimeout = null;
 
   function showTooltip(el) {
@@ -163,49 +182,38 @@ document.addEventListener('DOMContentLoaded', () => {
     const x = rect.left + rect.width / 2;
     const y = rect.top;
 
-    // Position above the element, but keep inside viewport horizontally
     tooltip.style.left = Math.min(Math.max(8, x), window.innerWidth - 8) + 'px';
     tooltip.style.top = (Math.max(8, y) - 8) + 'px';
     tooltip.style.opacity = '1';
-    tooltip.style.transform = 'translate(-50%, -6px)';
-    tooltipVisible = true;
+    tooltip.style.transform = 'translate(-50%, -8px)';
 
-    // Associate for screen readers
+    // attach aria
     const id = 'sidebar-tooltip';
     tooltip.id = id;
     el.setAttribute('aria-describedby', id);
 
-    if (hideTimeout) {
-      clearTimeout(hideTimeout);
-      hideTimeout = null;
-    }
+    if (hideTimeout) { clearTimeout(hideTimeout); hideTimeout = null; }
   }
 
   function hideTooltip(el) {
     tooltip.style.opacity = '0';
     tooltip.style.transform = 'translate(-50%, -4px)';
-    tooltipVisible = false;
     if (el) el.removeAttribute('aria-describedby');
-
-    // remove from DOM after animation to prevent focus issues
-    hideTimeout = setTimeout(() => {
-      tooltip.textContent = '';
-      hideTimeout = null;
-    }, 160);
+    hideTimeout = setTimeout(() => { tooltip.textContent = ''; }, 160);
   }
 
-  // events: mouseenter/mouseleave and focus/blur, also handle touch
-  nav.addEventListener('mouseover', (e) => {
-    const a = e.target.closest('a[ data-tooltip], a');
+  // mouse + focus events
+  nav.addEventListener('pointerenter', (e) => {
+    const a = e.target.closest('a');
     if (!a || !nav.contains(a)) return;
     if (a.dataset.tooltip) showTooltip(a);
-  });
+  }, true);
 
-  nav.addEventListener('mouseout', (e) => {
-    const a = e.target.closest('a[ data-tooltip], a');
+  nav.addEventListener('pointerleave', (e) => {
+    const a = e.target.closest('a');
     if (!a || !nav.contains(a)) return;
     hideTooltip(a);
-  });
+  }, true);
 
   nav.addEventListener('focusin', (e) => {
     const a = e.target.closest('a');
@@ -219,21 +227,108 @@ document.addEventListener('DOMContentLoaded', () => {
     hideTooltip(a);
   });
 
-  // keyboard: close tooltip on escape
   document.addEventListener('keydown', (ev) => {
-    if (ev.key === 'Escape' && tooltipVisible) {
+    if (ev.key === 'Escape') {
       tooltip.style.opacity = '0';
-      tooltipVisible = false;
     }
   });
 
-  // small improvement: keep indicator animation subtle for first load
+  // subtle initial animation for active item
   requestAnimationFrame(() => {
     document.querySelectorAll('#mobile-sidebar a[aria-current="page"]').forEach(el => {
       el.style.transform = 'scale(.98)';
       setTimeout(() => el.style.transform = '', 150);
     });
   });
+});
+
+/* -------------------------
+   Mobile sidebar toggle
+   ------------------------- */
+document.addEventListener('DOMContentLoaded', () => {
+  const body = document.body;
+  const btn = document.querySelector('[data-toggle="mobile"]#mobile-menu-button') || document.querySelector('[data-toggle="mobile"]');
+  const sidebar = document.getElementById('mobile-sidebar');
+  const overlay = document.getElementById('mobile-sidebar-overlay');
+
+  function openSidebar(triggerBtn) {
+    if (!sidebar) return;
+    overlay.style.display = 'block';
+    overlay.style.opacity = '1';
+    sidebar.style.display = 'block';
+    sidebar.style.transform = 'translateX(0)';
+    document.body.classList.add('overflow-hidden');
+
+    if (triggerBtn) {
+      triggerBtn.setAttribute('aria-expanded', 'true');
+      triggerBtn.classList.add('hamburger-open');
+    }
+
+    const first = sidebar.querySelector('a, button, input, [tabindex]:not([tabindex="-1"])');
+    (first || sidebar).focus({preventScroll:true});
+  }
+
+  function closeSidebar(returnFocusTo) {
+    if (!sidebar) return;
+    overlay.style.opacity = '0';
+    overlay.style.display = 'none';
+    sidebar.style.transform = '';
+    sidebar.style.display = 'none';
+    document.body.classList.remove('overflow-hidden');
+
+    if (btn) {
+      btn.setAttribute('aria-expanded', 'false');
+      btn.classList.remove('hamburger-open');
+    }
+    const target = returnFocusTo || btn;
+    if (target && typeof target.focus === 'function') target.focus({preventScroll:true});
+  }
+
+  function toggleSidebar(triggerBtn) {
+    const isOpen = document.body.classList.contains('mobile-sidebar-open');
+    if (isOpen) {
+      document.body.classList.remove('mobile-sidebar-open');
+      closeSidebar(triggerBtn);
+    } else {
+      document.body.classList.add('mobile-sidebar-open');
+      openSidebar(triggerBtn);
+    }
+  }
+
+  document.addEventListener('click', (e) => {
+    const clicked = e.target.closest('[data-toggle="mobile"]');
+    if (clicked) {
+      e.preventDefault();
+      toggleSidebar(clicked);
+    }
+  });
+
+  if (overlay) {
+    overlay.addEventListener('click', () => closeSidebar(btn));
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && document.body.classList.contains('mobile-sidebar-open')) {
+      closeSidebar(btn);
+    }
+  });
+
+  const mql = window.matchMedia('(min-width: 768px)');
+  if (mql.addEventListener) {
+    mql.addEventListener('change', (ev) => {
+      if (ev.matches && document.body.classList.contains('mobile-sidebar-open')) {
+        closeSidebar(btn);
+      }
+    });
+  } else if (mql.addListener) {
+    mql.addListener((ev) => {
+      if (ev.matches && document.body.classList.contains('mobile-sidebar-open')) {
+        closeSidebar(btn);
+      }
+    });
+  }
+
+  if (btn && !btn.hasAttribute('aria-expanded')) btn.setAttribute('aria-expanded', 'false');
 });
 </script>
 @endpush

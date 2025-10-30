@@ -1,278 +1,285 @@
+{{-- resources/views/call_logs/index.blade.php --}}
 @extends('layouts.app')
-@section('title','Call Logs')
-@section('page-title','Call Logs')
+
+@section('title', 'Call Logs')
 
 @section('content')
-  <div class="flex justify-between items-center mb-4">
-    <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Call Logs</h2>
-    <a href="/appointments/create" class="px-3 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors">Back to Appointments</a>
-  </div>
+<div class="min-h-screen py-10 px-6" style="background: linear-gradient(180deg, color-mix(in srgb, var(--bg) 0%, transparent), color-mix(in srgb, var(--brand) 3%, transparent)); color:var(--text)">
 
-  <div class="bg-white dark:bg-gray-800 rounded shadow relative overflow-hidden border border-gray-200 dark:border-gray-700">
-    <table class="w-full">
-      <thead class="bg-gray-50 dark:bg-gray-700">
-        <tr>
-          <th class="p-3 text-left text-gray-900 dark:text-white">#</th>
-          <th class="p-3 text-left text-gray-900 dark:text-white cursor-pointer" onclick="toggleAllDetails()">Patient <span class="text-xs text-gray-500 dark:text-gray-400">(click to expand)</span></th>
-          <th class="p-3 text-left text-gray-900 dark:text-white">Time</th>
-          <th class="p-3 text-left text-gray-900 dark:text-white">Result</th>
-          <th class="p-3 text-left text-gray-900 dark:text-white">Notes</th>
-          <th class="p-3 text-left text-gray-900 dark:text-white">Actions</th>
-        </tr>
-      </thead>
-      <tbody id="calllogs-body"></tbody>
-    </table>
-  </div>
+  <div class="max-w-7xl mx-auto" style="color:var(--text)">
 
-  <!-- Slide-over detail panel (hidden) -->
-  <aside id="callDetailPanel" class="fixed inset-y-0 right-0 w-full max-w-md bg-white dark:bg-gray-800 shadow-2xl transform translate-x-full transition-transform duration-200 z-50" aria-hidden="true" style="will-change: transform;">
-    <div class="p-6 flex items-start justify-between border-b border-gray-200 dark:border-gray-700">
-      <div>
-        <h3 id="detailPatientName" class="text-lg font-semibold text-gray-900 dark:text-white">Patient name</h3>
-        <p id="detailScheduled" class="text-sm text-gray-500 dark:text-gray-400">Scheduled</p>
-      </div>
-      <button id="closeDetail" class="text-gray-400 hover:text-gray-600 dark:text-gray-300 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-full p-1 transition-all" aria-label="Close details">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-      </button>
-    </div>
+    <div class="glass-card rounded-xl p-6" style="background:var(--surface); border:1px solid var(--border); box-shadow:var(--shadow)">
 
-    <div class="p-6 space-y-4">
-      <div>
-        <label class="block text-xs text-gray-500 dark:text-gray-400">Phone</label>
-        <div class="flex items-center gap-3 mt-2">
-          <a id="detailPhoneLink" href="#" class="text-lg font-medium text-blue-600 dark:text-blue-400 underline hover:text-blue-700 dark:hover:text-blue-300">+233 000 000 000</a>
-          <button id="copyPhone" class="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">Copy</button>
-        </div>
-      </div>
-
-      <div class="flex gap-3">
-        <a id="telCallBtn" href="#" class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 bg-green-600 dark:bg-green-700 text-white rounded-md hover:bg-green-700 dark:hover:bg-green-800 transition-colors" aria-label="Call patient">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1"/></svg>
-          Call
-        </a>
-
-        <button id="logCallOpen" class="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">Log Call</button>
-      </div>
-
-      <hr class="border-dashed border-gray-200 dark:border-gray-700">
-
-      <!-- Inline Log Call form -->
-      <form id="inlineLogForm" class="space-y-3 hidden" aria-hidden="true">
-        <input type="hidden" id="inlineAppointmentId" name="appointment_id">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Result</label>
-          <select id="inlineResult" name="result" required class="mt-1 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
-            <option value="">Select outcome</option>
-            <option value="no_answer">No Answer</option>
-            <option value="rescheduled">Rescheduled</option>
-            <option value="will_attend">Will Attend</option>
-            <option value="refused">Refused</option>
-            <option value="incorrect_number">Incorrect Number</option>
-          </select>
+          <h1 class="text-2xl font-bold" style="color:var(--text)">Call Logs</h1>
+          <p class="text-sm" style="color:var(--muted)">Overview of calls made and appointments not yet called.</p>
         </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Notes</label>
-          <textarea id="inlineNotes" name="notes" rows="3" class="mt-1 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" placeholder="Notes..."></textarea>
-        </div>
-        <div class="flex gap-3 justify-end">
-          <button type="button" id="inlineCancel" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">Cancel</button>
-          <button type="submit" class="px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors">Save Log</button>
-        </div>
-      </form>
-    </div>
-  </aside>
 
-  <!-- Toast container -->
-  <div id="toast" class="fixed bottom-6 right-6 z-50 space-y-2"></div>
-@endsection
+        <div class="flex items-center gap-3">
+          <form method="GET" action="{{ route('call_logs') }}" class="flex items-center gap-2">
+            <input
+              type="date"
+              name="date"
+              value="{{ request('date', \Illuminate\Support\Carbon::today()->toDateString()) }}"
+              class="rounded-md px-3 py-2"
+              aria-label="Filter by date"
+              style="background:var(--bg); color:var(--text); border:1px solid var(--border)"
+            />
+            <select name="period" class="rounded-md px-3 py-2" style="background:var(--bg); color:var(--text); border:1px solid var(--border)">
+              <option value="week" {{ ($selectedPeriod ?? request('period')) === 'week' ? 'selected' : '' }}>This week</option>
+              <option value="month" {{ ($selectedPeriod ?? request('period')) === 'month' ? 'selected' : '' }}>This month</option>
+            </select>
+            <button type="submit" class="px-4 py-2 rounded-lg" style="background:var(--brand); color:#fff; box-shadow:var(--shadow)">
+              Apply
+            </button>
+          </form>
+
+          <a href="{{ route('call_logs.create') }}" class="px-4 py-2 rounded-lg" style="background:var(--success); color:#fff; box-shadow:var(--shadow)">
+            + New Call Log
+          </a>
+        </div>
+      </div>
+
+      {{-- flash messages --}}
+      @if (session('success'))
+        <div class="p-4 rounded-lg mb-6" style="background: color-mix(in srgb, var(--success) 10%, transparent); color:var(--success); border:1px solid color-mix(in srgb, var(--success) 20%, transparent)">
+          {{ session('success') }}
+        </div>
+      @endif
+      @if (session('error'))
+        <div class="p-4 rounded-lg mb-6" style="background: color-mix(in srgb, var(--danger) 10%, transparent); color:var(--danger); border:1px solid color-mix(in srgb, var(--danger) 20%, transparent)">
+          {{ session('error') }}
+        </div>
+      @endif
+
+      {{-- Summary cards for week / month --}}
+      <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
+        <div class="p-4 rounded-xl shadow-md bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800">
+          <div class="text-xs text-blue-700 dark:text-blue-300">Week ({{ $weekStart->toDateString() }} → {{ $weekEnd->toDateString() }})</div>
+          <div class="mt-2 text-xl font-bold text-blue-800 dark:text-blue-200">{{ number_format($callsWeekCount) }}</div>
+          <div class="text-sm text-blue-700 dark:text-blue-400">Calls made this week</div>
+        </div>
+
+        <div class="p-4 rounded-xl shadow-md bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800">
+          <div class="text-xs text-green-700 dark:text-green-300">Expected (Week)</div>
+          <div class="mt-2 text-xl font-bold text-green-800 dark:text-green-200">{{ number_format($apptsWeekCount) }}</div>
+          <div class="text-sm text-green-700 dark:text-green-400">Appointments scheduled this week</div>
+        </div>
+
+        <div class="p-4 rounded-xl shadow-md bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800">
+          <div class="text-xs text-indigo-700 dark:text-indigo-300">Month ({{ $monthStart->toDateString() }} → {{ $monthEnd->toDateString() }})</div>
+          <div class="mt-2 text-xl font-bold text-indigo-800 dark:text-indigo-200">{{ number_format($callsMonthCount) }}</div>
+          <div class="text-sm text-indigo-700 dark:text-indigo-400">Calls made this month</div>
+        </div>
+
+        <div class="p-4 rounded-xl shadow-md bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800">
+          <div class="text-xs text-emerald-700 dark:text-emerald-300">Expected (Month)</div>
+          <div class="mt-2 text-xl font-bold text-emerald-800 dark:text-emerald-200">{{ number_format($apptsMonthCount) }}</div>
+          <div class="text-sm text-emerald-700 dark:text-emerald-400">Appointments scheduled this month</div>
+        </div>
+      </div>
+
+      {{-- small KPI row for not-called counts --}}
+      <div class="flex gap-4 items-center mb-6">
+        <div class="flex-1 p-4 rounded-xl shadow-md bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800">
+          <div class="text-sm text-amber-700 dark:text-amber-300">Appointments not called (week)</div>
+          <div class="text-2xl font-semibold text-amber-800 dark:text-amber-200 mt-1">{{ number_format($notCalledWeekCount) }}</div>
+        </div>
+
+        <div class="flex-1 p-4 rounded-xl shadow-md bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800">
+          <div class="text-sm text-amber-700 dark:text-amber-300">Appointments not called (month)</div>
+          <div class="text-2xl font-semibold text-amber-800 dark:text-amber-200 mt-1">{{ number_format($notCalledMonthCount) }}</div>
+        </div>
+      </div>
+
+
+      {{-- Tabs: Calls Made | Appointments Not Called --}}
+      <div class="mb-4">
+        <nav class="flex gap-2" aria-label="Call tabs">
+          <button id="tab-calls-made" class="px-4 py-2 rounded-md" style="background:var(--brand); color:#fff;">Calls Made</button>
+          <button id="tab-not-called" class="px-4 py-2 rounded-md" style="background:var(--bg); color:var(--text); border:1px solid var(--border)">Appointments Not Called</button>
+        </nav>
+      </div>
+
+      {{-- Calls Made table (paginated) --}}
+      <div id="calls-made-panel">
+        @if ($logs->count() > 0)
+          <div class="overflow-x-auto">
+            <table class="min-w-full" style="border-collapse:separate; border-spacing:0; width:100%;">
+              <thead>
+                <tr style="background: color-mix(in srgb, var(--surface) 92%, transparent);">
+                  <th class="px-4 py-2 text-left text-sm font-semibold" style="color:var(--muted)">Patient</th>
+                  <th class="px-4 py-2 text-left text-sm font-semibold" style="color:var(--muted)">Result</th>
+                  <th class="px-4 py-2 text-left text-sm font-semibold" style="color:var(--muted)">Notes</th>
+                  <th class="px-4 py-2 text-left text-sm font-semibold" style="color:var(--muted)">Called By</th>
+                  <th class="px-4 py-2 text-left text-sm font-semibold" style="color:var(--muted)">Call Time</th>
+                  <th class="px-4 py-2 text-left text-sm font-semibold" style="color:var(--muted)">Appointment</th>
+                </tr>
+              </thead>
+              <tbody>
+                @foreach ($logs as $log)
+                  <tr style="border-top:1px solid var(--border);">
+                    <td class="px-4 py-3" style="color:var(--text)">{{ optional($log->patient)->first_name ? (optional($log->patient)->first_name . ' ' . optional($log->patient)->last_name) : ($log->patient?->id ? 'Patient #' . $log->patient->id : 'Unknown') }}</td>
+
+                    <td class="px-4 py-3">
+                      @php $result = $log->result @endphp
+                      <span class="px-2 py-1 text-xs font-semibold rounded-full" style="
+                        background: {{ $result === 'no_answer' ? 'color-mix(in srgb, var(--danger) 10%, transparent)' : ($result === 'rescheduled' ? 'color-mix(in srgb, #f59e0b 10%, transparent)' : ($result === 'will_attend' ? 'color-mix(in srgb, var(--success) 10%, transparent)' : ($result === 'refused' ? 'color-mix(in srgb, var(--muted) 10%, transparent)' : 'color-mix(in srgb, var(--brand) 10%, transparent)')) ) }};
+                        color: {{ $result === 'no_answer' ? 'var(--danger)' : ($result === 'rescheduled' ? '#f59e0b' : ($result === 'will_attend' ? 'var(--success)' : ($result === 'refused' ? 'var(--muted)' : 'var(--brand)')) ) }};
+                        border:1px solid color-mix(in srgb, currentColor 18%, transparent);
+                      ">
+                        {{ ucfirst(str_replace('_', ' ', $log->result)) }}
+                      </span>
+                    </td>
+
+                    <td class="px-4 py-3" style="color:var(--text)">{{ $log->notes ?? '—' }}</td>
+                    <td class="px-4 py-3" style="color:var(--text)">{{ $log->called_by ?? 'System' }}</td>
+                    <td class="px-4 py-3" style="color:var(--text)">{{ $log->call_time ? \Carbon\Carbon::parse($log->call_time)->format('d M Y, h:i A') : '—' }}</td>
+                    <td class="px-4 py-3" style="color:var(--text)">{{ $log->appointment_id ? 'Appt #' . $log->appointment_id : '—' }}</td>
+                  </tr>
+                @endforeach
+              </tbody>
+            </table>
+          </div>
+
+          <div class="mt-6">
+            {{ $logs->links() }}
+          </div>
+        @else
+          <p class="text-center py-8" style="color:var(--muted)">No call logs found for this period.</p>
+        @endif
+      </div>
+
+      {{-- Appointments not called panel --}}
+      <div id="not-called-panel" class="hidden mt-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div class="card p-4" style="background:var(--surface); border:1px solid var(--border)">
+            <div class="text-sm" style="color:var(--muted)">Week not-called ({{ $weekStart->toDateString() }} → {{ $weekEnd->toDateString() }})</div>
+            <div class="text-2xl font-semibold mt-2" style="color:var(--text)">{{ number_format($notCalledWeekCount) }}</div>
+            <p class="text-sm" style="color:var(--muted)">Showing up to 200 appointments.</p>
+          </div>
+
+          <div class="card p-4" style="background:var(--surface); border:1px solid var(--border)">
+            <div class="text-sm" style="color:var(--muted)">Month not-called ({{ $monthStart->toDateString() }} → {{ $monthEnd->toDateString() }})</div>
+            <div class="text-2xl font-semibold mt-2" style="color:var(--text)">{{ number_format($notCalledMonthCount) }}</div>
+            <p class="text-sm" style="color:var(--muted)">Showing up to 200 appointments.</p>
+          </div>
+        </div>
+
+        <div class="space-y-6">
+          <section>
+            <h3 class="text-lg font-medium mb-2" style="color:var(--text)">Appointments this week without a call</h3>
+            @if ($notCalledAppointmentsWeek->isEmpty())
+              <p class="italic" style="color:var(--muted)">All appointments this week have associated calls (or there are no appointments).</p>
+            @else
+              <div class="overflow-x-auto">
+                <table class="min-w-full">
+                  <thead style="background: color-mix(in srgb, var(--surface) 92%, transparent);">
+                    <tr>
+                      <th class="px-4 py-2 text-left text-sm font-semibold" style="color:var(--muted)">Date</th>
+                      <th class="px-4 py-2 text-left text-sm font-semibold" style="color:var(--muted)">Time</th>
+                      <th class="px-4 py-2 text-left text-sm font-semibold" style="color:var(--muted)">Patient</th>
+                      <th class="px-4 py-2 text-left text-sm font-semibold" style="color:var(--muted)">Phone</th>
+                      <th class="px-4 py-2 text-left text-sm font-semibold" style="color:var(--muted)">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @foreach ($notCalledAppointmentsWeek as $appt)
+                      <tr style="border-top:1px solid var(--border);">
+                        <td class="px-4 py-3" style="color:var(--text)">{{ $appt->date }}</td>
+                        <td class="px-4 py-3" style="color:var(--text)">{{ $appt->time ?? '—' }}</td>
+                        <td class="px-4 py-3" style="color:var(--text)">{{ optional($appt->patient)->first_name ?? 'Patient #' . $appt->patient_id }} {{ optional($appt->patient)->last_name }}</td>
+                        <td class="px-4 py-3" style="color:var(--text)">{{ optional($appt->patient)->phone ?? '—' }}</td>
+                        <td class="px-4 py-3">
+                          <a href="{{ route('call_logs.create', ['appointment_id' => $appt->id]) }}" class="btn-ghost">Log Call</a>
+                          <a href="{{ route('patients.show', optional($appt->patient)->id) }}" class="btn-ghost">View Patient</a>
+                        </td>
+                      </tr>
+                    @endforeach
+                  </tbody>
+                </table>
+              </div>
+            @endif
+          </section>
+
+          <section>
+            <h3 class="text-lg font-medium mb-2" style="color:var(--text)">Appointments this month without a call</h3>
+            @if ($notCalledAppointmentsMonth->isEmpty())
+              <p class="italic" style="color:var(--muted)">All appointments this month have associated calls (or there are no appointments).</p>
+            @else
+              <div class="overflow-x-auto">
+                <table class="min-w-full">
+                  <thead style="background: color-mix(in srgb, var(--surface) 92%, transparent);">
+                    <tr>
+                      <th class="px-4 py-2 text-left text-sm font-semibold" style="color:var(--muted)">Date</th>
+                      <th class="px-4 py-2 text-left text-sm font-semibold" style="color:var(--muted)">Time</th>
+                      <th class="px-4 py-2 text-left text-sm font-semibold" style="color:var(--muted)">Patient</th>
+                      <th class="px-4 py-2 text-left text-sm font-semibold" style="color:var(--muted)">Phone</th>
+                      <th class="px-4 py-2 text-left text-sm font-semibold" style="color:var(--muted)">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @foreach ($notCalledAppointmentsMonth as $appt)
+                      <tr style="border-top:1px solid var(--border);">
+                        <td class="px-4 py-3" style="color:var(--text)">{{ $appt->date }}</td>
+                        <td class="px-4 py-3" style="color:var(--text)">{{ $appt->time ?? '—' }}</td>
+                        <td class="px-4 py-3" style="color:var(--text)">{{ optional($appt->patient)->first_name ?? 'Patient #' . $appt->patient_id }} {{ optional($appt->patient)->last_name }}</td>
+                        <td class="px-4 py-3" style="color:var(--text)">{{ optional($appt->patient)->phone ?? '—' }}</td>
+                        <td class="px-4 py-3">
+                          <a href="{{ route('call_logs.create', ['appointment_id' => $appt->id]) }}" class="btn-ghost">Log Call</a>
+                          <a href="{{ route('patients.show', optional($appt->patient)->id) }}" class="btn-ghost">View Patient</a>
+                        </td>
+                      </tr>
+                    @endforeach
+                  </tbody>
+                </table>
+              </div>
+            @endif
+          </section>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
 
 @push('scripts')
 <script>
-/*
-  Call Logs UI with slide-over detail & inline call logging.
-  - Requires axios to be available globally (like your original script).
-  - Expects GET /api/call-logs -> array of logs
-  - Expects POST /api/call-logs to create a log { appointment_id, result, notes }
-*/
-(function(){
-  // ensure axios has csrf header (if meta exists)
-  const meta = document.querySelector('meta[name="csrf-token"]');
-  if(meta && window.axios) axios.defaults.headers.common['X-CSRF-TOKEN'] = meta.content;
+  // Tabs behavior (small vanilla JS)
+  document.addEventListener('DOMContentLoaded', function () {
+    const tabCalls = document.getElementById('tab-calls-made');
+    const tabNot = document.getElementById('tab-not-called');
+    const panelCalls = document.getElementById('calls-made-panel');
+    const panelNot = document.getElementById('not-called-panel');
 
-  const tbody = document.getElementById('calllogs-body');
-  const detailPanel = document.getElementById('callDetailPanel');
-  const closeDetail = document.getElementById('closeDetail');
-  const detailPatientName = document.getElementById('detailPatientName');
-  const detailScheduled = document.getElementById('detailScheduled');
-  const detailPhoneLink = document.getElementById('detailPhoneLink');
-  const telCallBtn = document.getElementById('telCallBtn');
-  const copyPhoneBtn = document.getElementById('copyPhone');
-  const logCallOpen = document.getElementById('logCallOpen');
-  const inlineForm = document.getElementById('inlineLogForm');
-  const inlineAppointmentId = document.getElementById('inlineAppointmentId');
-  const inlineResult = document.getElementById('inlineResult');
-  const inlineNotes = document.getElementById('inlineNotes');
-  const inlineCancel = document.getElementById('inlineCancel');
-  const toastWrap = document.getElementById('toast');
+    if (!tabCalls || !tabNot || !panelCalls || !panelNot) return;
 
-  // small toast helper
-  function showToast(msg, timeout=2500){
-    const el = document.createElement('div');
-    el.className = 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-4 py-3 rounded shadow text-gray-900 dark:text-white';
-    el.innerText = msg;
-    toastWrap.appendChild(el);
-    setTimeout(()=> {
-      el.remove();
-    }, timeout);
-  }
-
-  function openPanel() {
-    detailPanel.style.transform = 'translateX(0)';
-    detailPanel.setAttribute('aria-hidden', 'false');
-  }
-  function closePanel() {
-    detailPanel.style.transform = '';
-    detailPanel.setAttribute('aria-hidden', 'true');
-    // hide form on close
-    hideInlineForm();
-  }
-
-  closeDetail.addEventListener('click', closePanel);
-
-  // copy to clipboard
-  copyPhoneBtn.addEventListener('click', async () => {
-    const phone = detailPhoneLink.dataset.phone || detailPhoneLink.textContent;
-    try {
-      await navigator.clipboard.writeText(phone);
-      showToast('Phone copied');
-    } catch (e) {
-      showToast('Could not copy');
+    function showCalls() {
+      panelCalls.classList.remove('hidden');
+      panelNot.classList.add('hidden');
+      tabCalls.style.background = 'var(--brand)';
+      tabCalls.style.color = '#fff';
+      tabNot.style.background = 'var(--bg)';
+      tabNot.style.color = 'var(--text)';
     }
-  });
 
-  // open log form inline
-  logCallOpen.addEventListener('click', () => {
-    showInlineForm();
-  });
-  inlineCancel.addEventListener('click', hideInlineForm);
-
-  function showInlineForm(){
-    inlineForm.classList.remove('hidden');
-    inlineForm.setAttribute('aria-hidden', 'false');
-    inlineResult.focus();
-  }
-  function hideInlineForm(){
-    inlineForm.classList.add('hidden');
-    inlineForm.setAttribute('aria-hidden', 'true');
-    inlineResult.value = '';
-    inlineNotes.value = '';
-  }
-
-  // handle inline form submit -> POST to /api/call-logs
-  inlineForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const appointment_id = inlineAppointmentId.value;
-    const result = inlineResult.value;
-    const notes = inlineNotes.value;
-    if(!result){ showToast('Select a result'); return; }
-    try {
-      const payload = { appointment_id, result, notes };
-      const res = await axios.post('/api/call-logs', payload);
-      if(res.data && (res.data.success || res.status === 201 || res.status === 200)){
-        showToast('Logged call');
-        hideInlineForm();
-        loadCalls();          // refresh table
-      } else {
-        showToast(res.data.message || 'Could not save');
-      }
-    } catch (err) {
-      console.error(err);
-      showToast('Network error');
+    function showNot() {
+      panelCalls.classList.add('hidden');
+      panelNot.classList.remove('hidden');
+      tabNot.style.background = 'var(--brand)';
+      tabNot.style.color = '#fff';
+      tabCalls.style.background = 'var(--bg)';
+      tabCalls.style.color = 'var(--text)';
     }
+
+    tabCalls.addEventListener('click', showCalls);
+    tabNot.addEventListener('click', showNot);
+
+    // default
+    showCalls();
   });
-
-  // populate rows
-  async function loadCalls(date = null){
-    try {
-      let url = '/api/call-logs';
-      if(date) url += '?date=' + encodeURIComponent(date);
-      const res = await axios.get(url);
-      tbody.innerHTML = '';
-      (res.data || []).forEach((c, i) => {
-        // keep columns consistent: #, patient, time, result, notes, actions
-        const tr = document.createElement('tr');
-        tr.className = 'border-t';
-        // escape html simple util
-        const esc = (s) => (s===null || s===undefined) ? '' : String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-        tr.innerHTML = `
-          <td class="p-3 align-top">${i+1}</td>
-          <td class="p-3 align-top cursor-pointer" onclick="toggleDetail('${c.id}')">
-            <div class="flex items-center gap-2">
-              <span class="text-gray-900 dark:text-white">${esc(c.patient_name || (c.patient && (c.patient.first_name + ' ' + (c.patient.last_name||''))))}</span>
-              <svg class="w-4 h-4 text-gray-400 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-              </svg>
-            </div>
-          </td>
-          <td class="p-3 align-top text-gray-900 dark:text-white">${esc(c.call_time || c.created_at || '')}</td>
-          <td class="p-3 align-top text-gray-900 dark:text-white">${esc(c.result || '')}</td>
-          <td class="p-3 align-top text-gray-900 dark:text-white">${esc(c.notes || '')}</td>
-          <td class="p-3 align-top">
-            <button class="view-detail inline-flex items-center gap-2 px-3 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" 
-              data-appointment='${JSON.stringify({
-                id: c.appointment_id ?? c.appointment?.id ?? null,
-                patient_name: c.patient_name ?? (c.patient && (c.patient.first_name + ' ' + (c.patient.last_name||''))) ?? '',
-                phone: c.patient_phone ?? c.patient?.phone ?? c.phone ?? '',
-                scheduled: c.scheduled_date ?? c.scheduled_time ?? ''
-              }).replaceAll("'", "\\'")}'>
-              View
-            </button>
-          </td>
-        `;
-        tbody.appendChild(tr);
-      });
-    } catch (err) {
-      console.error(err);
-      showToast('Could not load call logs');
-    }
-  }
-
-  // delegation: click view
-  tbody.addEventListener('click', (ev) => {
-    const btn = ev.target.closest('.view-detail');
-    if(!btn) return;
-    // data-appointment contains JSON string
-    const dataStr = btn.getAttribute('data-appointment');
-    let appt = {};
-    try { appt = JSON.parse(dataStr); } catch(e){ console.error(e); }
-    // populate panel
-    detailPatientName.textContent = appt.patient_name || 'Unknown';
-    detailScheduled.textContent = appt.scheduled || '';
-    const phone = appt.phone || 'N/A';
-    detailPhoneLink.dataset.phone = phone;
-    detailPhoneLink.href = phone && phone !== 'N/A' ? `tel:${phone}` : '#';
-    detailPhoneLink.textContent = phone;
-    telCallBtn.href = phone && phone !== 'N/A' ? `tel:${phone}` : '#';
-    inlineAppointmentId.value = appt.id || '';
-    // open panel
-    openPanel();
-  });
-
-  // initial load
-  loadCalls();
-
-  // close when clicking outside panel (optional)
-  document.addEventListener('click', (e) => {
-    if(!detailPanel.contains(e.target) && !e.target.closest('.view-detail') && detailPanel.getAttribute('aria-hidden') === 'false'){
-      // keep it friendly: only close when clicking outside
-      closePanel();
-    }
-  });
-
-  // keyboard escape to close
-  document.addEventListener('keydown', (e) => {
-    if(e.key === 'Escape' && detailPanel.getAttribute('aria-hidden') === 'false') closePanel();
-  });
-})();
 </script>
 @endpush
+
+@endsection

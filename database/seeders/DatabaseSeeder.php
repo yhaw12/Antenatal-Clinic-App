@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Alert;
 use App\Models\Appointment;
 use App\Models\Patient;
 use App\Models\User;
@@ -19,5 +20,6 @@ class DatabaseSeeder extends Seeder
          Patient::factory()->count(50)->create();
 
          Appointment::factory()->count(80)->create();
+         Alert::factory()->count(25)->create();
     }
 }
