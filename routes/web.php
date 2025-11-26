@@ -164,6 +164,8 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('activity-logs/{userActivityLog}', [UserActivityLogController::class, 'destroy'])->name('admin.activity-logs.destroy');
     });
 
+    Route::post('/appointments/{id}/mark-seen', [CallLogWebController::class, 'markSeen'])->name('appointments.mark-seen');
+
     // ---- API for schedule (internal/JS) ----
     Route::prefix('api')->group(function () {
         Route::get('/schedule', [ScheduleApiController::class, 'list']);

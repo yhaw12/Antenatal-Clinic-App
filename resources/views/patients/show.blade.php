@@ -3,527 +3,440 @@
 @section('title', 'Patient Details')
 
 @section('content')
-<div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-6"
-     style="background: linear-gradient(180deg, var(--bg, #f8fbff) 0%, var(--surface, #ffffff) 100%); color:var(--text, #0f172a)">
+<div class="min-h-screen font-sans" style="background: linear-gradient(180deg, color-mix(in srgb, var(--bg) 0%, transparent), color-mix(in srgb, var(--brand) 4%, transparent));">
 
-    <div class="max-w-5xl mx-auto bg-white dark:bg-gray-800 rounded-3xl shadow-xl p-6"
-         style="background:var(--surface, #fff); color:var(--text, #0f172a); border:1px solid var(--border, rgba(15,23,42,0.06)); box-shadow:var(--shadow,0 6px 18px rgba(2,6,23,.08))">
-        <!-- Header -->
-        <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
+    <header class="sticky top-0 z-40 transition-all duration-200" style="backdrop-filter: blur(16px); background: color-mix(in srgb, var(--bg) 90%, transparent); border-bottom: 1px solid var(--border);">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
+            
             <div class="flex items-center gap-4">
-                <!-- Avatar with optional image fallback -->
-                <div class="h-20 w-20 rounded-full overflow-hidden bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center text-indigo-700 dark:text-indigo-300 font-semibold text-2xl"
-                     style="background:var(--avatar-bg, linear-gradient(180deg,#eef2ff,#e0e7ff)); color:var(--avatar-text,#3730a3)">
-                    @if(!empty($patient->avatar_url))
-                        <img src="{{ $patient->avatar_url }}" alt="{{ $patient->first_name }} avatar" class="w-full h-full object-cover">
-                    @else
-                        {{ strtoupper(substr($patient->first_name,0,1).($patient->last_name ? substr($patient->last_name,0,1) : '')) }}
-                    @endif
-                </div>
-
+                <a href="{{ route('patients.index') }}" class="p-2 rounded-xl border transition-all hover:scale-105" style="background: var(--surface); border-color: var(--border); color: var(--muted);">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                </a>
                 <div>
-                    <h1 class="text-2xl font-bold"
-                        style="color:var(--text, #0f172a)">
-                        {{ $patient->first_name }} {{ $patient->last_name ?? '' }}
-                    </h1>
-                    <p class="text-sm" style="color:var(--muted, #6b7280)">
-                        Hospital No: <span class="font-medium" style="color:var(--text, #0f172a)">{{ $patient->hospital_number ?? 'N/A' }}</span>
-                        • ID: <span class="font-medium" style="color:var(--text, #0f172a)">{{ $patient->id_number ?? 'N/A' }}</span>
-                    </p>
-                    <p class="text-sm mt-1 flex items-center gap-2" style="color:var(--muted, #6b7280)">
-                        <svg class="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m7 4l2 2-2 2M14 10v6"/></svg>
-                        <span id="patientPhoneLabel" style="color:var(--text, #0f172a)">{{ $patient->phone ?? 'N/A' }}</span>
-                        @if($patient->phone)
-                            <button id="copyPhoneBtn" class="ml-2 text-xs px-2 py-1 border rounded"
-                                    style="color:var(--muted,#6b7280); border:1px solid var(--border,#e6edf3); background:var(--bg,#fff)"
-                                    title="Copy phone">Copy</button>
-                            <a id="quickCallBtn" href="tel:{{ $patient->phone }}" class="ml-2 text-xs px-2 py-1 border rounded"
-                               style="color:var(--accent, #0ea5a4); border:1px solid var(--border,#e6edf3); background:transparent"
-                               title="Call">Call</a>
-                        @endif
-                    </p>
+                    <h1 class="text-lg font-bold" style="color: var(--text)">Patient Profile</h1>
+                    <div class="flex items-center gap-2 text-xs font-medium" style="color: var(--muted)">
+                        <span>{{ $patient->hospital_number ?? 'No Folder No' }}</span>
+                        <span>•</span>
+                        <span>{{ $patient->id_number ?? 'No ID' }}</span>
+                    </div>
                 </div>
             </div>
 
             <div class="flex items-center gap-3">
-                <a href="{{ route('patients.index') }}" class="px-4 py-2 border rounded-lg text-sm font-medium"
-                   style="color:var(--text, #0f172a); border:1px solid var(--border,#e6edf3); background:var(--bg,#fff)" aria-label="Back to all patients">
-                    Back
+                <a href="{{ route('patients.edit', $patient->id) }}" class="hidden sm:flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl border transition-all hover:bg-gray-50 dark:hover:bg-white/5" style="background: var(--surface); border-color: var(--border); color: var(--text);">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                    Edit
                 </a>
-
-                <a href="{{ route('appointments.create') }}?patient_id={{ $patient->id }}" class="px-4 py-2 rounded-lg font-medium"
-                   style="background:linear-gradient(90deg,var(--accent, #10b981), var(--accent-2, #06b6d4)); color:#fff; box-shadow:var(--shadow,0 6px 18px rgba(2,6,23,.08))"
-                   aria-label="Schedule new appointment for {{ $patient->first_name }}">
-                    Schedule Appointment
+                <a href="{{ route('appointments.create') }}?patient_id={{ $patient->id }}" class="flex items-center gap-2 px-5 py-2.5 text-white text-sm font-bold rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all active:scale-95" style="background: var(--brand);">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                    <span class="hidden sm:inline">New Appointment</span>
                 </a>
-
-                <button id="printBtn" class="px-4 py-2 border rounded-lg text-sm font-medium"
-                        style="color:var(--text,#0f172a); border:1px solid var(--border,#e6edf3); background:var(--bg,#fff)" title="Print appointments">
-                    Print
-                </button>
             </div>
         </div>
+    </header>
 
-        <!-- Controls: search + filter + sort + counts -->
-        <div class="flex flex-col md:flex-row gap-4 items-center justify-between mb-6">
-            <div class="flex items-center gap-3 w-full md:w-auto">
-                <label for="searchAppointments" class="sr-only">Search appointments</label>
-                <input id="searchAppointments" type="search"
-                       placeholder="Search by notes, date or status..."
-                       class="w-full md:w-72 px-4 py-2 border rounded-lg"
-                       style="background:var(--bg, #fff); color:var(--text,#0f172a); border:1px solid var(--border,#e6edf3);"
-                />
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        
+        <div class="glass-card rounded-3xl p-8 relative overflow-hidden shadow-sm border group" style="background:var(--surface); border-color: var(--border);">
+            <div class="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
+            
+            <div class="relative flex flex-col md:flex-row gap-8 items-start md:items-center">
+                <div class="w-24 h-24 rounded-2xl flex items-center justify-center text-3xl font-black text-white shadow-xl shadow-brand/20 shrink-0" 
+                     style="background: linear-gradient(135deg, var(--brand), var(--accent));">
+                    @if(!empty($patient->avatar_url))
+                        <img src="{{ $patient->avatar_url }}" alt="Avatar" class="w-full h-full object-cover rounded-2xl">
+                    @else
+                        {{ strtoupper(substr($patient->first_name, 0, 1)) }}{{ strtoupper(substr($patient->last_name ?? '', 0, 1)) }}
+                    @endif
+                </div>
 
-                <select id="statusFilter" class="px-3 py-2 border rounded-lg"
-                        style="background:var(--bg, #fff); color:var(--text,#0f172a); border:1px solid var(--border,#e6edf3);">
-                    <option value="all">All statuses</option>
-                    <option value="queued">Queued</option>
-                    <option value="in_room">In Room</option>
-                    <option value="seen">Seen</option>
-                    <option value="cancelled">Cancelled</option>
-                    <option value="no_show">No Show</option>
-                </select>
-
-                <select id="sortBy" class="px-3 py-2 border rounded-lg"
-                        style="background:var(--bg, #fff); color:var(--text,#0f172a); border:1px solid var(--border,#e6edf3);">
-                    <option value="date_desc">Newest first</option>
-                    <option value="date_asc">Oldest first</option>
-                </select>
-            </div>
-
-            <div class="text-sm" style="color:var(--muted,#6b7280)">
-                <span id="appointmentsCount" style="color:var(--text,#0f172a)">0</span> appointments
-                <span class="ml-3" style="color:var(--muted,#6b7280)">•</span>
-                <span class="ml-3" style="color:var(--muted,#6b7280)">Last updated: <span id="lastUpdated">—</span></span>
-            </div>
-        </div>
-
-        <!-- Appointment History -->
-        <section aria-labelledby="appointmentsHeading" class="mb-8">
-            <h2 id="appointmentsHeading" class="text-xl font-semibold mb-4 flex items-center gap-3" style="color:var(--text,#0f172a)">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                </svg>
-                Appointment History
-            </h2>
-
-            <div id="appointmentsList" class="space-y-4 max-h-[34rem] overflow-y-auto pr-2">
-                {{-- Appointment cards will be rendered server-side initially and enhanced client-side --}}
-                @forelse($patient->appointments as $appointment)
-                    <article class="appointment-card p-4 rounded-lg border shadow-sm flex justify-between items-start"
-                             data-id="{{ $appointment->id }}"
-                             data-status="{{ $appointment->status }}"
-                             data-date="{{ $appointment->date }}"
-                             data-time="{{ $appointment->time ? $appointment->time->format('H:i') : '' }}"
-                             aria-labelledby="appt-title-{{ $appointment->id }}"
-                             style="background:var(--card-bg, var(--bg)); color:var(--text); border:1px solid var(--border);">
-                        <div class="flex gap-4 items-start">
-                            <div class="flex-shrink-0 pt-1">
-                                <!-- small icon -->
-                                <div class="h-10 w-10 rounded-lg border flex items-center justify-center"
-                                     style="background:var(--surface); border:1px solid var(--border); color:var(--muted);">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14"/>
-                                    </svg>
-                                </div>
-                            </div>
-
-                            <div>
-                                <h3 id="appt-title-{{ $appointment->id }}" class="text-sm font-semibold"
-                                    style="color:var(--text)">
-                                    <span class="inline-block mr-2">{{ \Carbon\Carbon::parse($appointment->date)->format('d M, Y') }}</span>
-                                    <span class="text-xs" style="color:var(--muted)">{{ $appointment->time ? $appointment->time->format('H:i') : 'Time N/A' }}</span>
-                                </h3>
-                                <p class="text-sm mt-1 max-w-prose" style="color:var(--muted)">
-                                    {{ Str::limit($appointment->notes ?? 'No notes', 120) }}
-                                </p>
-
-                                <div class="mt-2 flex items-center gap-2">
-                                    <span class="status-badge inline-flex items-center gap-2 px-2 py-1 rounded-full text-xs font-semibold"
-                                          style="{{ in_array($appointment->status, ['queued','in_room','seen']) ? 'background:var(--success-bg, #ecfdf5); color:var(--success-text,#065f46)' : 'background:var(--danger-bg,#fff1f2); color:var(--danger-text,#9f1239)' }}">
-                                        {{ ucfirst(str_replace('_',' ',$appointment->status)) }}
-                                    </span>
-
-                                    @if($appointment->rescheduled_from)
-                                        <span class="text-xs" style="color:var(--muted)">(rescheduled)</span>
-                                    @endif
-                                </div>
-                            </div>
+                <div class="flex-1 min-w-0 space-y-2">
+                    <h2 class="text-3xl font-black tracking-tight" style="color: var(--text)">
+                        {{ $patient->first_name }} {{ $patient->last_name }}
+                    </h2>
+                    
+                    <div class="flex flex-wrap gap-3">
+                        @if($patient->phone)
+                        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-lg border text-sm font-medium transition-colors cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5" 
+                             style="background: color-mix(in srgb, var(--surface) 50%, transparent); border-color: var(--border); color: var(--text);"
+                             onclick="navigator.clipboard.writeText('{{ $patient->phone }}'); showToast('Phone copied!');">
+                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                            {{ $patient->phone }}
                         </div>
-
-                        <div class="flex flex-col items-end gap-2">
-                            <div class="flex gap-2">
-                                <button onclick="openCallModal({{ $appointment->id }}, '{{ addslashes($patient->first_name . ' ' . ($patient->last_name ?? '')) }}', '{{ $patient->phone ?? '' }}')"
-                                        class="px-3 py-2 border rounded-lg text-sm"
-                                        style="background:var(--bg); border:1px solid var(--border); color:var(--text) ;"
-                                        aria-label="Log call for appointment {{ $appointment->id }}">
-                                    Call / Log
-                                </button>
-
-                                <button onclick="markSeen({{ $appointment->id }})"
-                                        class="px-3 py-2 border rounded-lg text-sm"
-                                        style="background:var(--bg); border:1px solid var(--border); color:var(--text)">
-                                    Mark seen
-                                </button>
-                            </div>
-
-                            <div class="text-xs" style="color:var(--muted)">
-                                <time datetime="{{ $appointment->date }}T{{ $appointment->time ? $appointment->time->format('H:i') : '00:00' }}" class="relative-date">—</time>
-                            </div>
+                        @endif
+                        
+                        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-lg border text-sm font-medium" 
+                             style="background: color-mix(in srgb, var(--surface) 50%, transparent); border-color: var(--border); color: var(--muted);">
+                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                            {{ $patient->address ?? 'No Address' }}
                         </div>
-                    </article>
-                @empty
-                    <div class="p-8 text-center rounded-lg border-dashed"
-                         style="background:var(--bg); border:1px dashed var(--border); color:var(--muted)">
-                        <svg class="h-12 w-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
-                        </svg>
-                        <p class="mb-2">No appointments found.</p>
-                        <a href="{{ route('appointments.create') }}?patient_id={{ $patient->id }}" class="inline-block px-4 py-2 rounded-lg"
-                           style="background:var(--accent,#3b82f6); color:#fff">Create first appointment</a>
-                    </div>
-                @endforelse
-            </div>
-        </section>
-
-        <!-- Call Modal -->
-        <div id="callModal" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-50 p-4" role="dialog" aria-modal="true" aria-labelledby="callModalTitle">
-            <div id="callModalPanel" class="w-full max-w-md rounded-3xl transform transition-all scale-95 opacity-0 overflow-hidden"
-                 style="background:var(--surface); border:1px solid var(--border); color:var(--text); box-shadow:var(--shadow,0 10px 30px rgba(2,6,23,.12))" role="document">
-                <div class="p-6 border-b" style="border-bottom:1px solid var(--border); background:linear-gradient(90deg, color-mix(in srgb, var(--bg) 85%, white), color-mix(in srgb, var(--surface) 85%, white))">
-                    <div class="flex items-center justify-between">
-                        <h3 id="callModalTitle" class="text-xl font-bold" style="color:var(--text)">Log Call — <span id="callPatientName"></span></h3>
-                        <button id="closeCallModalBtn" class="p-2 rounded-lg" style="color:var(--muted); background:transparent" aria-label="Close modal">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                        </button>
                     </div>
                 </div>
 
-                <form id="callLogForm" class="p-6 space-y-6" method="POST" action="{{ route('call_logs.store') }}">
-                    @csrf
-                    <input type="hidden" name="appointment_id" id="callAppointmentId">
-                    <div class="space-y-1">
-                        <label class="block text-sm font-medium" style="color:var(--muted)">Call Result <span class="text-red-500">*</span></label>
-                        <select name="result" id="callResult" required class="w-full px-4 py-3 border rounded-xl"
-                                style="background:var(--bg); border:1px solid var(--border); color:var(--text);">
-                            <option value="">Select outcome</option>
-                            <option value="no_answer">No Answer</option>
-                            <option value="rescheduled">Rescheduled</option>
-                            <option value="will_attend">Will Attend</option>
-                            <option value="refused">Refused</option>
-                            <option value="incorrect_number">Incorrect Number</option>
-                        </select>
+                <div class="flex gap-6 md:border-l md:pl-8" style="border-color: var(--border);">
+                    <div class="text-center">
+                        <div class="text-3xl font-black" style="color: var(--brand)">{{ $visitHistory->count() }}</div>
+                        <div class="text-xs font-bold uppercase tracking-wider" style="color: var(--muted)">Past Visits</div>
                     </div>
-                    <div>
-                        <label for="notes" class="block text-sm font-medium mb-2" style="color:var(--muted)">Notes</label>
-                        <textarea id="notes" name="notes" rows="4" class="w-full px-4 py-3 border rounded-xl"
-                                  style="background:var(--bg); border:1px solid var(--border); color:var(--text);"
-                                  placeholder="Additional details about the call..."></textarea>
+                    <div class="text-center">
+                        <div class="text-3xl font-black" style="color: var(--success)">{{ $scheduledVisits->count() }}</div>
+                        <div class="text-xs font-bold uppercase tracking-wider" style="color: var(--muted)">Upcoming</div>
                     </div>
-
-                    <div class="flex items-center justify-between pt-4" style="border-top:1px solid var(--border)">
-                        <a id="telLink" href="#" class="text-sm font-medium" target="_blank" rel="noopener noreferrer"
-                           style="color:var(--accent, #3b82f6)">📞 Call Again</a>
-                        <div class="flex gap-3">
-                            <button type="button" id="cancelCallBtn" class="px-6 py-3 border rounded-xl"
-                                    style="background:var(--bg); border:1px solid var(--border); color:var(--text)">Cancel</button>
-                            <button id="saveCallBtn" type="submit" class="px-6 py-3 rounded-xl font-medium"
-                                    style="background:linear-gradient(90deg,var(--accent,#3b82f6), var(--accent-2,#06b6d4)); color:#fff; box-shadow:var(--shadow)">
-                                <span class="btn-text">Save Log</span>
-                                <svg id="btnSpinner" class="hidden animate-spin w-4 h-4 ml-2 inline-block" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
-                            </button>
-                        </div>
-                    </div>
-                </form>
+                </div>
             </div>
         </div>
 
-        <!-- Toast container (aria-live) -->
-        <div id="toast" class="fixed right-6 bottom-6 z-50 space-y-2" aria-live="polite" aria-atomic="true"></div>
+        <div class="space-y-6">
+            
+            <div class="flex p-1 rounded-xl overflow-x-auto no-scrollbar w-full sm:w-auto gap-2" style="background: color-mix(in srgb, var(--bg) 50%, transparent);">
+                <button class="tab-btn flex-1 sm:flex-none px-6 py-2.5 rounded-lg text-sm font-bold transition-all whitespace-nowrap active" 
+                        data-target="#scheduled" onclick="switchTab('scheduled')">
+                    Scheduled Visits
+                </button>
+                <button class="tab-btn flex-1 sm:flex-none px-6 py-2.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap" 
+                        data-target="#history" onclick="switchTab('history')" style="color: var(--muted)">
+                    Visit History
+                </button>
+                <button class="tab-btn flex-1 sm:flex-none px-6 py-2.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap" 
+                        data-target="#calls" onclick="switchTab('calls')" style="color: var(--muted)">
+                    Call Logs
+                </button>
+            </div>
+
+            <div id="tab-contents">
+                
+                <div id="scheduled" class="tab-panel space-y-4">
+                    @forelse($scheduledVisits as $appointment)
+                        <div class="group bg-white dark:bg-gray-800 p-5 rounded-2xl border hover:border-blue-300 dark:hover:border-blue-700 shadow-sm flex flex-col sm:flex-row justify-between gap-4 items-start sm:items-center transition-all animate-fade-in" 
+                             style="background: var(--surface); border-color: var(--border);">
+                            
+                            <div class="flex gap-5 items-center">
+                                <div class="flex-shrink-0 w-14 h-14 rounded-2xl flex flex-col items-center justify-center border shadow-sm" 
+                                     style="background: var(--bg); border-color: var(--border); color: var(--brand);">
+                                    <span class="text-[10px] font-bold uppercase">{{ \Carbon\Carbon::parse($appointment->date)->format('M') }}</span>
+                                    <span class="text-xl font-black leading-none">{{ \Carbon\Carbon::parse($appointment->date)->format('d') }}</span>
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-lg" style="color: var(--text)">
+                                        {{ $appointment->time ? \Carbon\Carbon::parse($appointment->time)->format('h:i A') : 'Time TBD' }}
+                                    </h3>
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide" 
+                                          style="background: color-mix(in srgb, var(--brand) 10%, transparent); color: var(--brand);">
+                                        {{ ucfirst($appointment->status) }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="flex gap-2 w-full sm:w-auto opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                                <button onclick="openCallModal({{ $appointment->id }}, '{{ addslashes($patient->first_name) }}', '{{ $patient->phone }}')"
+                                        class="flex-1 sm:flex-none px-4 py-2 rounded-xl text-sm font-bold transition-all hover:scale-105 active:scale-95"
+                                        style="background: var(--bg); color: var(--text); border: 1px solid var(--border);">
+                                    📞 Log Call
+                                </button>
+                                @if($appointment->status !== 'seen')
+                                    <button onclick="markSeen({{ $appointment->id }}, this)"
+                                            class="flex-1 sm:flex-none px-4 py-2 rounded-xl text-sm font-bold transition-all hover:scale-105 active:scale-95"
+                                            style="background: color-mix(in srgb, var(--success) 10%, transparent); color: var(--success); border: 1px solid color-mix(in srgb, var(--success) 20%, transparent);">
+                                        ✓ Mark Seen
+                                    </button>
+                                @endif
+                            </div>
+                        </div>
+                    @empty
+                        <div class="text-center py-16 rounded-3xl border-2 border-dashed" style="border-color: var(--border); color: var(--muted);">
+                            <svg class="w-12 h-12 mx-auto mb-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            <p class="font-medium">No upcoming visits scheduled.</p>
+                        </div>
+                    @endforelse
+                </div>
+
+                <div id="history" class="tab-panel hidden space-y-4">
+                    @forelse($visitHistory as $appointment)
+                        <div class="p-5 rounded-2xl border shadow-sm flex gap-5 animate-fade-in" style="background: var(--surface); border-color: var(--border);">
+                            <div class="w-1.5 self-stretch rounded-full" 
+                                 style="background: {{ $appointment->status === 'missed' ? 'var(--danger)' : ($appointment->status === 'seen' ? 'var(--success)' : 'var(--muted)') }}"></div>
+                            
+                            <div class="flex-1">
+                                <div class="flex justify-between items-start">
+                                    <h4 class="font-bold text-lg" style="color: var(--text)">{{ \Carbon\Carbon::parse($appointment->date)->format('F d, Y') }}</h4>
+                                    <span class="text-[10px] font-bold uppercase tracking-wide px-2 py-1 rounded-md"
+                                          style="background: {{ $appointment->status === 'missed' ? 'color-mix(in srgb, var(--danger) 10%, transparent)' : 'color-mix(in srgb, var(--success) 10%, transparent)' }}; 
+                                                 color: {{ $appointment->status === 'missed' ? 'var(--danger)' : 'var(--success)' }}">
+                                        {{ ucfirst($appointment->status) }}
+                                    </span>
+                                </div>
+                                <p class="text-sm mt-2 leading-relaxed" style="color: var(--muted)">
+                                    {{ $appointment->notes ?? 'No clinical notes recorded for this visit.' }}
+                                </p>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="text-center py-16 rounded-3xl border-2 border-dashed" style="border-color: var(--border); color: var(--muted);">
+                            <p class="font-medium">No past visit history found.</p>
+                        </div>
+                    @endforelse
+                </div>
+
+                <div id="calls" class="tab-panel hidden space-y-4">
+                    @forelse($callHistory as $call)
+                        <div class="p-5 rounded-2xl border shadow-sm transition-all hover:border-brand/30 animate-fade-in" style="background: var(--surface); border-color: var(--border);">
+                            <div class="flex justify-between items-center mb-3">
+                                <div class="flex items-center gap-3">
+                                    <span class="px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wide" 
+                                          style="background: {{ $call->result === 'no_answer' ? 'color-mix(in srgb, var(--danger) 10%, transparent)' : 'color-mix(in srgb, var(--brand) 10%, transparent)' }}; 
+                                                 color: {{ $call->result === 'no_answer' ? 'var(--danger)' : 'var(--brand)' }}">
+                                        {{ str_replace('_', ' ', $call->result) }}
+                                    </span>
+                                    <span class="text-xs font-mono" style="color: var(--muted)">{{ $call->created_at->format('h:i A') }}</span>
+                                </div>
+                                <span class="text-xs font-bold" style="color: var(--muted)">{{ $call->created_at->format('M d, Y') }}</span>
+                            </div>
+                            <p class="text-sm leading-relaxed" style="color: var(--text)">
+                                {{ $call->notes ?? 'No notes provided.' }}
+                            </p>
+                            <div class="mt-4 pt-3 border-t flex items-center gap-2 text-xs" style="border-color: var(--border); color: var(--muted);">
+                                <div class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white" style="background: var(--muted);">
+                                    {{ substr($call->caller->name ?? 'S', 0, 1) }}
+                                </div>
+                                Logged by <span class="font-medium">{{ $call->caller->name ?? 'System' }}</span>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="text-center py-16 rounded-3xl border-2 border-dashed" style="border-color: var(--border); color: var(--muted);">
+                            <p class="font-medium">No calls logged yet.</p>
+                            <button onclick="document.querySelector('[onclick*=\'openCallModal\']').click()" class="text-sm font-bold hover:underline mt-2 inline-block" style="color: var(--brand)">
+                                Log a call now
+                            </button>
+                        </div>
+                    @endforelse
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <div id="callModal" class="fixed inset-0 z-50 hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity opacity-0" id="modalBackdrop"></div>
+        <div class="fixed inset-0 z-10 overflow-y-auto">
+            <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+                <div id="callModalPanel" class="relative transform overflow-hidden rounded-3xl text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-lg opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" style="background: var(--surface); color: var(--text);">
+                    
+                    <div class="px-6 py-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="text-xl font-bold" id="modal-title">Log Call Result</h3>
+                            <button type="button" onclick="closeCallModal()" class="text-gray-400 hover:text-gray-500">
+                                <span class="sr-only">Close</span>
+                                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                        </div>
+                        
+                        <div class="mb-6 p-4 rounded-2xl flex items-center justify-between" style="background: color-mix(in srgb, var(--brand) 10%, transparent); color: var(--brand);">
+                            <span>Calling: <span id="callPatientName" class="font-bold"></span></span>
+                            <a id="telLink" href="#" class="font-bold hover:underline">Dial Now ↗</a>
+                        </div>
+
+                        <form id="callLogForm" method="POST" action="{{ route('call_logs.store') }}">
+                            @csrf
+                            <input type="hidden" name="appointment_id" id="callAppointmentId">
+                            <input type="hidden" name="patient_id" value="{{ $patient->id }}">
+                            
+                            <div class="space-y-5">
+                                <div>
+                                    <label class="block text-sm font-bold mb-2" style="color: var(--muted)">Outcome <span class="text-red-500">*</span></label>
+                                    <select name="result" id="callResult" required class="w-full rounded-xl border-0 ring-1 ring-inset ring-gray-300 dark:ring-gray-700 focus:ring-2 focus:ring-inset focus:ring-brand py-3 text-gray-900 dark:text-white bg-transparent">
+                                        <option value="">Select outcome...</option>
+                                        <option value="no_answer">No Answer</option>
+                                        <option value="rescheduled">Rescheduled</option>
+                                        <option value="will_attend">Confirmed / Will Attend</option>
+                                        <option value="refused">Refused</option>
+                                        <option value="incorrect_number">Wrong Number</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-bold mb-2" style="color: var(--muted)">Notes</label>
+                                    <textarea name="notes" rows="3" class="w-full rounded-xl border-0 ring-1 ring-inset ring-gray-300 dark:ring-gray-700 focus:ring-2 focus:ring-inset focus:ring-brand text-gray-900 dark:text-white bg-transparent" placeholder="Add details..."></textarea>
+                                </div>
+                            </div>
+
+                            <div class="mt-8 sm:flex sm:flex-row-reverse gap-3">
+                                <button type="submit" id="saveCallBtn" class="inline-flex w-full justify-center rounded-xl px-6 py-3 text-sm font-bold text-white shadow-lg hover:shadow-xl transition-all active:scale-95 sm:w-auto" style="background: var(--brand);">
+                                    <span class="btn-text">Save Log</span>
+                                </button>
+                                <button type="button" onclick="closeCallModal()" class="mt-3 inline-flex w-full justify-center rounded-xl px-6 py-3 text-sm font-bold shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-700 hover:bg-gray-50 dark:hover:bg-white/5 sm:mt-0 sm:w-auto" style="color: var(--text); background: var(--surface);">Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
+
+    <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-3 pointer-events-none"></div>
 </div>
 
+<style>
+    /* Tab Styling using Brand Color */
+    .tab-btn.active {
+        background-color: var(--brand);
+        color: white;
+        box-shadow: 0 4px 6px -1px color-mix(in srgb, var(--brand) 30%, transparent);
+    }
+    .tab-btn.active:hover { color: white; }
+    
+    .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+</style>
+@endsection
 
 @push('scripts')
 <script>
-/* ==========================
-   Utility & micro UX helpers
-   ========================== */
-
-// Format relative date simple (no deps)
-function relativeDateFrom(dateStr, timeStr = '') {
-    try {
-        const base = timeStr ? dateStr + ' ' + timeStr : dateStr;
-        const d = new Date(base);
-        const now = new Date();
-        const diff = Math.round((now - d) / 1000); // seconds
-        if (isNaN(diff)) return new Date(dateStr).toLocaleDateString();
-        if (Math.abs(diff) < 60) return Math.abs(diff) + 's ago';
-        if (Math.abs(diff) < 3600) return Math.round(Math.abs(diff) / 60) + 'm ago';
-        if (Math.abs(diff) < 86400) return Math.round(Math.abs(diff) / 3600) + 'h ago';
-        return d.toLocaleString();
-    } catch (e) {
-        return dateStr;
-    }
-}
-
-// Toast
-function toast(message, type = 'success') {
-    const el = document.getElementById('toast');
-    const id = 't' + Date.now();
-    const color = type === 'error' ? 'bg-red-600 border-red-400 text-white' : type === 'warn' ? 'bg-yellow-500 border-yellow-400 text-black' : 'bg-emerald-500 border-emerald-400 text-white';
-    const node = document.createElement('div');
-    node.id = id;
-    node.setAttribute('role','status');
-    node.className = `border-l-4 ${color} px-4 py-3 rounded-lg shadow-lg max-w-sm transform translate-y-6 opacity-0 transition-all duration-300`;
-    node.innerHTML = `<div class="flex items-center gap-3"><div class="flex-1 text-sm font-medium">${message}</div><button aria-label="Dismiss" class="ml-2">✕</button></div>`;
-    el.prepend(node);
-    // entrance
-    requestAnimationFrame(()=> {
-        node.classList.remove('translate-y-6','opacity-0');
-        node.classList.add('translate-y-0','opacity-100');
-    });
-    // dismiss
-    const dismiss = node.querySelector('button');
-    const remove = () => node.remove();
-    dismiss.addEventListener('click', remove);
-    setTimeout(() => {
-        node.classList.add('translate-y-6','opacity-0');
-        setTimeout(remove, 500);
-    }, 3500);
-}
-
-/* ==========================
-   Appointment list client behavior
-   ========================== */
-
 document.addEventListener('DOMContentLoaded', () => {
-    const list = document.getElementById('appointmentsList');
-    const countEl = document.getElementById('appointmentsCount');
-    const lastUpdatedEl = document.getElementById('lastUpdated');
-    const searchInput = document.getElementById('searchAppointments');
-    const statusFilter = document.getElementById('statusFilter');
-    const sortBy = document.getElementById('sortBy');
+    // --- Tab Logic ---
+    const tabs = document.querySelectorAll('.tab-btn');
+    const panels = document.querySelectorAll('.tab-panel');
 
-    // init relative times and counts
-    const refreshUi = () => {
-        const cards = Array.from(list.querySelectorAll('.appointment-card'));
-        // apply relative dates
-        cards.forEach(card => {
-            const timeEl = card.querySelector('.relative-date');
-            const date = card.dataset.date;
-            const time = card.dataset.time || '';
-            timeEl.textContent = relativeDateFrom(date, time);
-        });
-        countEl.textContent = cards.length;
-        lastUpdatedEl.textContent = new Date().toLocaleTimeString();
-    };
-    refreshUi();
-
-    // filtering & search
-    const applyFilters = () => {
-        const q = (searchInput.value || '').toLowerCase().trim();
-        const st = statusFilter.value;
-        let cards = Array.from(list.querySelectorAll('.appointment-card'));
-        // filter
-        cards.forEach(card => {
-            const text = (card.textContent || '').toLowerCase();
-            const status = card.dataset.status || '';
-            const date = card.dataset.date || '';
-            let visible = true;
-            if (st !== 'all' && status !== st) visible = false;
-            if (q && !(text.includes(q) || date.includes(q))) visible = false;
-            card.style.display = visible ? 'flex' : 'none';
-        });
-        // sort visible cards
-        const visibleCards = Array.from(list.querySelectorAll('.appointment-card')).filter(c => c.style.display !== 'none');
-        visibleCards.sort((a,b) => {
-            const ad = new Date(a.dataset.date + ' ' + (a.dataset.time || '00:00'));
-            const bd = new Date(b.dataset.date + ' ' + (b.dataset.time || '00:00'));
-            return sortBy.value === 'date_asc' ? ad - bd : bd - ad;
-        });
-        visibleCards.forEach(c => list.appendChild(c));
-        document.getElementById('appointmentsCount').textContent = visibleCards.length;
-    };
-
-    searchInput.addEventListener('input', () => applyFilters());
-    statusFilter.addEventListener('change', () => applyFilters());
-    sortBy.addEventListener('change', () => applyFilters());
-
-    /* Copy phone */
-    const copyBtn = document.getElementById('copyPhoneBtn');
-    if (copyBtn) {
-        copyBtn.addEventListener('click', async () => {
-            const phoneText = document.getElementById('patientPhoneLabel').textContent.trim();
-            try {
-                await navigator.clipboard.writeText(phoneText);
-                toast('Phone copied to clipboard');
-            } catch(e) {
-                toast('Unable to copy', 'warn');
+    window.switchTab = (targetId) => {
+        panels.forEach(p => p.classList.add('hidden'));
+        document.getElementById(targetId).classList.remove('hidden');
+        tabs.forEach(btn => {
+            if(btn.dataset.target === '#' + targetId) {
+                btn.classList.add('active');
+                // Reset inline color styles that might override class
+                btn.style.color = '';
+            } else {
+                btn.classList.remove('active');
+                // Apply muted color to inactive
+                btn.style.color = 'var(--muted)';
             }
         });
-    }
+    };
 
-    /* Print */
-    document.getElementById('printBtn').addEventListener('click', () => {
-        window.print();
-    });
-});
+    // Initialize Tabs
+    switchTab('scheduled');
 
-/* ==========================
-   Modal (call log) interactions
-   ========================== */
-
-const openCallModal = (id, name, phone = '') => {
-    const modal = document.getElementById('callModal');
-    const panel = document.getElementById('callModalPanel');
-    document.getElementById('callAppointmentId').value = id;
-    document.getElementById('callPatientName').textContent = name + (phone ? ' • ' + phone : '');
-    const telLink = document.getElementById('telLink');
-    telLink.href = phone ? `tel:${phone}` : '#';
-    telLink.style.display = phone ? 'inline' : 'none';
-    modal.classList.remove('hidden');
-    setTimeout(() => {
-        panel.classList.remove('scale-95','opacity-0');
-        panel.classList.add('scale-100','opacity-100');
-        // focus first field
-        document.getElementById('callResult').focus();
-        trapFocus(panel);
-    }, 10);
-};
-
-const closeCallModal = () => {
-    const modal = document.getElementById('callModal');
-    const panel = document.getElementById('callModalPanel');
-    panel.classList.add('scale-95','opacity-0');
-    setTimeout(() => {
-        modal.classList.add('hidden');
-        releaseFocusTrap();
-        document.getElementById('callLogForm').reset();
-    }, 200);
-};
-
-document.getElementById('closeCallModalBtn').addEventListener('click', closeCallModal);
-document.getElementById('cancelCallBtn').addEventListener('click', closeCallModal);
-
-// Close on Escape
-document.addEventListener('keydown', (e) => {
-    const modal = document.getElementById('callModal');
-    if (e.key === 'Escape' && modal && !modal.classList.contains('hidden')) closeCallModal();
-});
-
-/* Focus trap simple */
-let _trap = null;
-function trapFocus(container) {
-    const focusable = Array.from(container.querySelectorAll('a,button,input,select,textarea,[tabindex]:not([tabindex="-1"])')).filter(n => !n.hasAttribute('disabled'));
-    if (!focusable.length) return;
-    let i = 0;
-    _trap = (e) => {
-        if (e.key !== 'Tab') return;
-        i = focusable.indexOf(document.activeElement);
-        if (e.shiftKey) {
-            if (i === 0) {
-                e.preventDefault();
-                focusable[focusable.length - 1].focus();
-            }
+    // --- Modal Logic ---
+    window.openCallModal = (id, name, phone) => {
+        const modal = document.getElementById('callModal');
+        const backdrop = document.getElementById('modalBackdrop');
+        const panel = document.getElementById('callModalPanel');
+        
+        document.getElementById('callAppointmentId').value = id;
+        document.getElementById('callPatientName').textContent = name;
+        
+        const telLink = document.getElementById('telLink');
+        if(phone) {
+            telLink.href = `tel:${phone}`;
+            telLink.style.display = 'inline';
         } else {
-            if (i === focusable.length - 1) {
-                e.preventDefault();
-                focusable[0].focus();
-            }
+            telLink.style.display = 'none';
+        }
+
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            backdrop.classList.remove('opacity-0');
+            panel.classList.remove('opacity-0', 'translate-y-4', 'sm:translate-y-0', 'sm:scale-95');
+            panel.classList.add('opacity-100', 'translate-y-0', 'sm:scale-100');
+        }, 10);
+    };
+
+    window.closeCallModal = () => {
+        const modal = document.getElementById('callModal');
+        const backdrop = document.getElementById('modalBackdrop');
+        const panel = document.getElementById('callModalPanel');
+
+        backdrop.classList.add('opacity-0');
+        panel.classList.remove('opacity-100', 'translate-y-0', 'sm:scale-100');
+        panel.classList.add('opacity-0', 'translate-y-4', 'sm:translate-y-0', 'sm:scale-95');
+
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            document.getElementById('callLogForm').reset();
+        }, 300);
+    };
+
+    // --- AJAX Form ---
+    function showToast(message, type = 'success') {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        const bgStyle = type === 'success' ? 'background: var(--success);' : 'background: var(--danger);';
+        
+        toast.style.cssText = `${bgStyle} color: white;`;
+        toast.className = 'px-6 py-3 rounded-xl shadow-2xl transform transition-all duration-300 translate-y-10 opacity-0 pointer-events-auto flex items-center gap-3 font-bold';
+        toast.innerHTML = `<span>${message}</span>`;
+        
+        container.appendChild(toast);
+        requestAnimationFrame(() => toast.classList.remove('translate-y-10', 'opacity-0'));
+        setTimeout(() => {
+            toast.classList.add('translate-y-10', 'opacity-0');
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+
+    document.getElementById('callLogForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const form = e.target;
+        const btn = document.getElementById('saveCallBtn');
+        
+        btn.disabled = true;
+        btn.innerHTML = 'Saving...';
+
+        try {
+            const formData = new FormData(form);
+            const response = await fetch(form.action, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                },
+                body: formData
+            });
+
+            if(!response.ok) throw new Error('Failed to save log');
+
+            showToast('Call logged successfully');
+            closeCallModal();
+            window.location.reload(); 
+        } catch (error) {
+            showToast('Error saving log.', 'error');
+            btn.disabled = false;
+            btn.innerHTML = '<span class="btn-text">Save Log</span>';
+        }
+    });
+
+    // Mark Seen AJAX
+    window.markSeen = async (id, btnElement) => {
+        if(!confirm('Mark this appointment as attended/seen?')) return;
+
+        const originalText = btnElement.innerHTML;
+        btnElement.innerText = 'Processing...';
+        btnElement.disabled = true;
+
+        try {
+            const response = await fetch(`/appointments/${id}/mark-seen`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Accept': 'application/json'
+                }
+            });
+
+            if(!response.ok) throw new Error('Failed');
+
+            showToast('Marked as seen!');
+            setTimeout(() => window.location.reload(), 500);
+
+        } catch (error) {
+            console.error(error);
+            showToast('Failed to update status', 'error');
+            btnElement.innerHTML = originalText;
+            btnElement.disabled = false;
         }
     };
-    document.addEventListener('keydown', _trap);
-}
-function releaseFocusTrap() {
-    if (_trap) {
-        document.removeEventListener('keydown', _trap);
-        _trap = null;
-    }
-}
-
-/* ==========================
-   Submit call log (AJAX optimistic)
-   ========================== */
-
-document.getElementById('callLogForm')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const form = e.target;
-    const submitBtn = document.getElementById('saveCallBtn');
-    const spinner = document.getElementById('btnSpinner');
-    const btnText = submitBtn.querySelector('.btn-text');
-    const originalText = btnText.textContent;
-    // show loading
-    spinner.classList.remove('hidden');
-    btnText.textContent = 'Saving...';
-    const formData = new FormData(form);
-    const url = form.action;
-    try {
-        const res = await fetch(url, { method: 'POST', body: formData, headers: {'X-Requested-With':'XMLHttpRequest'} });
-        if (!res.ok) {
-            const text = await res.text();
-            throw new Error(text || 'Failed to log call');
-        }
-        const data = await res.json().catch(()=>({}));
-        toast('Call logged successfully');
-        // optimistic update: update appointment status badge if returned or if result is will_attend/rescheduled
-        const apptId = formData.get('appointment_id');
-        const result = formData.get('result');
-        const card = document.querySelector(`.appointment-card[data-id="${apptId}"]`);
-        if (card) {
-            // update badge & dataset
-            if (result === 'will_attend') {
-                card.dataset.status = 'queued';
-                const badge = card.querySelector('.status-badge');
-                badge.textContent = 'Queued';
-                badge.className = 'status-badge inline-flex items-center gap-2 px-2 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300';
-            } else if (result === 'rescheduled') {
-                card.dataset.status = 'queued';
-                const badge = card.querySelector('.status-badge');
-                badge.textContent = 'Rescheduled';
-            }
-        }
-        closeCallModal();
-    } catch (err) {
-        console.error(err);
-        toast('Failed to log call', 'error');
-    } finally {
-        spinner.classList.add('hidden');
-        btnText.textContent = originalText;
-    }
 });
-
-/* ==========================
-   Mark seen action (AJAX)
-   ========================== */
-async function markSeen(apptId) {
-    if (!confirm('Mark this appointment as seen?')) return;
-    try {
-        // endpoint — assumes you have a route to update appointment status: /appointments/{id}/mark-seen
-        const res = await fetch(`/appointments/${apptId}/mark-seen`, {
-            method: 'POST',
-            headers: {'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'), 'X-Requested-With':'XMLHttpRequest'}
-        });
-        if (!res.ok) throw new Error('Failed');
-        // update UI
-        const card = document.querySelector(`.appointment-card[data-id="${apptId}"]`);
-        if (card) {
-            card.dataset.status = 'seen';
-            const badge = card.querySelector('.status-badge');
-            badge.textContent = 'Seen';
-            badge.className = 'status-badge inline-flex items-center gap-2 px-2 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300';
-        }
-        toast('Appointment marked as seen');
-    } catch (err) {
-        console.error(err);
-        toast('Failed to update appointment', 'error');
-    }
-}
-
-/* Expose openCallModal for inline onclick usage */
-window.openCallModal = openCallModal;
-window.markSeen = markSeen;
 </script>
 @endpush
-
-@endsection

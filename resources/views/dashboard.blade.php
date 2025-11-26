@@ -211,11 +211,11 @@
         </div>
 
         <!-- Main grid: Queue + Sidebar -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
       <!-- Queue Section (left big column) -->
       <div class="lg:col-span-2" id="queueSection">
-        <div class="glass-card rounded-2xl p-6 mb-6" style="background:var(--surface); border:1px solid var(--border); box-shadow:var(--shadow);">
+        <div class="glass-card rounded-2xl p-6 mb-4" style="background:var(--surface); border:1px solid var(--border); box-shadow:var(--shadow);">
           <div class="flex items-center justify-between mb-4">
             <div>
               <h3 class="text-lg font-bold" style="color:var(--text)">Today's Queue</h3>
@@ -941,34 +941,49 @@
     }
 
     function renderResults(items) {
-      currentItems = items || [];
-      activeIndex = -1;
-      resultsBox.setAttribute('role', 'listbox');
+    currentItems = items || [];
+    activeIndex = -1;
+    resultsBox.setAttribute('role', 'listbox');
+    resultsBox.setAttribute('aria-label', 'Search results');
       if (!items || !items.length) {
-        resultsBox.innerHTML = `<div class="p-4 text-sm text-gray-600 dark:text-gray-300">No results found</div>`;
+        resultsBox.innerHTML = `<div class="p-4 text-sm text-muted">No results found</div>`;
         return;
       }
 
-      resultsBox.innerHTML = `<div class="divide-y dark:divide-gray-700 text-md">` + items.map((item, idx) => {
-        const name = (item.first_name || item.last_name) ? `${item.first_name || ''} ${item.last_name || ''}`.trim() : (item.label || 'Unknown Patient');
-        const href = item.id ? `/patients/${item.id}` : '#';
-        const phoneInfo = item.phone ? `<span class="flex items-center text-xs">${escapeHtmlLocal(item.phone)}</span>` : '';
-        return `
-          <a href="${href}" role="option" id="search-option-${idx}" data-index="${idx}" class="block p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors" tabindex="-1">
-            <div class="flex items-start justify-between">
-              <div class="flex-1">
-                <div class="flex items-center space-x-2">
-                  <div class="text-sm font-medium text-gray-900 dark:text-white">${escapeHtmlLocal(name)}</div>
+      resultsBox.innerHTML = `
+        <div class="divide-y divide-border text-sm">
+          ${items.map((item, idx) => {
+            const name = (item.first_name || item.last_name)
+              ? `${item.first_name || ''} ${item.last_name || ''}`.trim()
+              : (item.label || 'Unknown Patient');
+
+            const href = item.id ? `/patients/${item.id}` : '#';
+            const phoneInfo = item.phone
+              ? `<span class="flex items-center text-xs text-muted">${escapeHtmlLocal(item.phone)}</span>`
+              : '';
+
+            return `
+              <a href="${href}"
+                role="option"
+                id="search-option-${idx}"
+                data-index="${idx}"
+                class="block p-4 active-result:bg-surface/80 transition-colors outline-none"
+                tabindex="-1">
+                <div class="flex items-start justify-between">
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center space-x-2">
+                      <div class="font-medium text-text truncate">
+                        ${escapeHtmlLocal(name)}
+                      </div>
+                    </div>
+                    ${phoneInfo ? `<div class="mt-1">${phoneInfo}</div>` : ''}
+                  </div>
                 </div>
-                <div class="mt-1 flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
-                  ${phoneInfo}
-                </div>
-              </div>
-            </div>
-          </a>
-        `;
-      }).join('') + `</div>`;
-    }
+              </a>
+            `;
+          }).join('')}
+        </div>`;
+      }
 
     function focusResult(idx) {
       const option = resultsBox.querySelector(`#search-option-${idx}`);

@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
        $this->call(RoleSeeder::class);
+       $this->call(PermissionSeeder::class);
          Patient::factory()->count(50)->create();
 
          Appointment::factory()->count(80)->create();

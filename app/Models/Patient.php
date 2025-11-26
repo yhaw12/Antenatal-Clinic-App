@@ -30,6 +30,8 @@ class Patient extends Model
     // relations
     public function appointments() { return $this->hasMany(Appointment::class); }
     public function attendances()  { return $this->hasMany(Attendance::class); }
+    public function callLogs()     { return $this->hasMany(CallLog::class); }
+
 
     /**
      * Maintain only name_search and phone_search on save.
@@ -68,6 +70,7 @@ class Patient extends Model
             $patient->phone_search = $plainPhone ? preg_replace('/\D+/', '', $plainPhone) : null;
         });
     }
+    
 
     /**
      * Simple scope for searching

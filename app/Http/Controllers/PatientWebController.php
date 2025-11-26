@@ -84,11 +84,34 @@ class PatientWebController extends Controller
     public function show($id)
     {
         try {
-            $patient = Patient::with(['appointments' => function ($q) {
-                $q->orderByDesc('date')->orderByDesc('time');
-            }])->findOrFail($id);
+            // Eager load appointments and call logs
+            // Assuming 'callLogs' relationship exists on Patient model: public function callLogs() { return $this->hasMany(CallLog::class); }
+            $patient = Patient::with([
+                'appointments' => function ($q) {
+                    $q->orderByDesc('date')->orderByDesc('time');
+                },
+                'callLogs' => function ($q) {
+                    $q->orderByDesc('created_at'); // Or 'call_time' if that's your column
+                }
+            ])->findOrFail($id);
 
-            return view('patients.show', compact('patient'));
+            // Separate appointments into history (past) and upcoming (scheduled/future)
+            $today = Carbon::today();
+            
+            // History: Past dates OR today but status is 'completed'/'seen'/'missed' etc.
+            // You might adjust this logic based on your specific status definitions.
+            $visitHistory = $patient->appointments->filter(function ($appt) use ($today) {
+                return $appt->date < $today->toDateString() || ($appt->date == $today->toDateString() && in_array($appt->status, ['seen', 'completed', 'missed', 'cancelled']));
+            });
+
+            // Scheduled: Future dates OR today if status is 'scheduled'/'queued'/'in_room'
+            $scheduledVisits = $patient->appointments->filter(function ($appt) use ($today) {
+                return $appt->date > $today->toDateString() || ($appt->date == $today->toDateString() && in_array($appt->status, ['scheduled', 'queued', 'in_room']));
+            });
+
+            $callHistory = $patient->callLogs;
+
+            return view('patients.show', compact('patient', 'visitHistory', 'scheduledVisits', 'callHistory'));
         } catch (\Exception $e) {
             Log::error('Failed to load patient', ['id' => $id, 'error' => $e->getMessage()]);
             return redirect()->route('patients.index')->with('error', 'Failed to load patient');

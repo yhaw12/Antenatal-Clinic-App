@@ -1,6 +1,31 @@
-
 @import "tailwindcss";
 
+/* ===========================================================
+   THEME CONFIGURATION (Tailwind v4)
+   =========================================================== */
+@theme {
+  /* COLORS: These map your CSS vars to Tailwind utilities */
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  
+  /* FIX: Map 'var(--text)' to '--color-body' so 'text-body' works */
+  --color-body: var(--text);
+  
+  --color-muted: var(--muted);
+  --color-brand: var(--brand);
+  --color-accent: var(--accent);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --color-border: var(--border);
+  
+  /* SHADOWS & RADIUS */
+  --shadow-custom: var(--shadow);
+  --radius-custom: var(--radius);
+}
+
+/* ===========================================================
+   DESIGN TOKENS + BASE
+   =========================================================== */
 @layer base {
   :root {
     --bg: #ffffff;
@@ -12,16 +37,16 @@
     --success: #10b981;
     --danger: #ef4444;
     --border: #e5e7eb;
-    --shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-    --glass: rgba(255, 255, 255, 0.8);
+    --shadow: 0 4px 12px rgba(0,0,0,0.05);
+    --glass: rgba(255,255,255,0.8);
     --radius: 0.75rem;
     --loader-start: var(--brand);
     --loader-end: var(--success);
   }
 
-  /* Dark theme overrides (class-based) */
+  /* Dark theme */
   .dark {
-    --bg: #0f1724; /* slightly darker for high contrast */
+    --bg: #0f1724;
     --surface: #0b1320;
     --text: #f8fafc;
     --muted: #94a3b8;
@@ -30,200 +55,169 @@
     --success: #34d399;
     --danger: #f87171;
     --border: #1f2937;
-    --shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
-    --glass: rgba(17, 24, 39, 0.55);
+    --shadow: 0 6px 18px rgba(0,0,0,0.45);
+    --glass: rgba(17,24,39,0.55);
   }
 
   html, body {
     background-color: var(--bg);
     color: var(--text);
-    font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    font-variant-ligatures: none;
   }
-
-  /* small helper classes to match the blade markup */
-  .body-text { color: var(--text); }
-  .muted-text { color: var(--muted); }
-  .font-inter { font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
 }
 
-@layer components {
-  /* Token helpers */
-  .bg-surface { background-color: var(--surface); }
-  .bg-app { background-color: var(--bg); }
-  .text-body { color: var(--text); }
-  .text-muted { color: var(--muted); }
-  .border-surface { border: 1px solid var(--border); }
+/* ===========================================================
+   GLOBAL DATE PICKER FIX
+   =========================================================== */
+@layer base {
+  input[type="date"] {
+    @apply appearance-none;
+    background-color: var(--bg) !important;
+    color: var(--text) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 0.75rem;
+    padding: 0.5rem 0.75rem;
+  }
 
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    opacity: 0.6;
+    filter: invert(0.4);
+    cursor: pointer;
+  }
+
+  input[type="date"]:focus {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
+  }
+
+  .dark input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); }
+}
+
+/* ===========================================================
+   COMPONENTS
+   =========================================================== */
+@layer components {
   /* Card */
   .card {
-    background-color: var(--surface);
-    color: var(--text);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
-    border: 1px solid var(--border);
-    transition: transform 0.18s ease, box-shadow 0.18s ease;
+    /* Now text-body works because --color-body is defined in @theme */
+    @apply bg-surface text-body border-surface shadow-custom rounded-[--radius-custom];
+    transition: transform .18s ease, box-shadow .18s ease;
+    border-width: 1px;
   }
 
   /* Buttons */
   .btn-primary {
-    background-color: var(--brand);
-    color: white;
-    padding: 0.625rem 1rem;
-    border-radius: 0.5rem;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-weight: 500;
-    transition: background-color 0.18s ease, transform 0.12s ease;
+    @apply bg-brand text-white inline-flex items-center gap-2 font-medium rounded-lg py-2.5 px-4 transition-all duration-200;
   }
-  .btn-primary:hover { filter: brightness(0.95); transform: translateY(-1px); }
+  .btn-primary:hover { filter: brightness(.95); transform: translateY(-1px); }
 
   .btn-ghost {
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 0.5rem 0.875rem;
-    border-radius: 0.5rem;
-    font-weight: 500;
-    transition: all 0.18s ease;
+    @apply bg-transparent border border-border text-body py-2 px-3.5 rounded-lg font-medium transition-all duration-200;
   }
-  .btn-ghost:hover { background-color: color-mix(in srgb, var(--surface) 95%, black); transform: translateY(-1px); }
+  .btn-ghost:hover { 
+    background-color: color-mix(in srgb, var(--surface) 95%, black); 
+    transform: translateY(-1px); 
+  }
 
-  .btn-success { background-color: var(--success); color: white; padding: 0.5rem 0.875rem; border-radius: 0.5rem; font-weight:500; }
-  .btn-danger { background-color: var(--danger); color: white; padding: 0.5rem 0.875rem; border-radius: 0.5rem; font-weight:500; }
+  /* Replaced manual styles with @apply where possible for consistency */
+  .btn-success { @apply bg-success text-white py-2 px-3.5 rounded-lg font-medium; }
+  .btn-danger  { @apply bg-danger text-white py-2 px-3.5 rounded-lg font-medium; }
 
-  /* Pill */
-  .pill { display:inline-block; padding:0.25rem 0.75rem; border-radius:9999px; font-size:0.75rem; font-weight:600; background-color: color-mix(in srgb, var(--surface) 90%, black); }
+  .pill {
+    @apply inline-block px-3 py-1 rounded-full text-xs font-semibold;
+    background-color: color-mix(in srgb, var(--surface) 90%, black);
+  }
 
-  /* Glass effect (variant) */
-  .glass { background: var(--glass); backdrop-filter: blur(8px); border-radius: 0.5rem; padding: 0.75rem; border: 1px solid color-mix(in srgb, var(--border) 50%, transparent); }
+  .glass {
+    background: var(--glass);
+    backdrop-filter: blur(8px);
+    border-radius: .5rem;
+    padding: .75rem;
+    border: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
+  }
 
-  /* Status badges */
-  .status-badge { display:inline-flex; align-items:center; gap:0.375rem; padding:0.25rem 0.75rem; border-radius:9999px; font-size:0.75rem; font-weight:600; text-transform:capitalize; }
-  .status-pending { background: color-mix(in srgb, var(--accent) 10%, transparent); color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent); }
-  .status-confirmed { background: color-mix(in srgb, var(--brand) 10%, transparent); color: var(--brand); border:1px solid color-mix(in srgb, var(--brand) 20%, transparent); }
-  .status-completed { background: color-mix(in srgb, var(--success) 10%, transparent); color: var(--success); border:1px solid color-mix(in srgb, var(--success) 20%, transparent); }
-  .status-cancelled { background: color-mix(in srgb, var(--danger) 10%, transparent); color: var(--danger); border:1px solid color-mix(in srgb, var(--danger) 20%, transparent); }
+  /* Status Badges */
+  .status-badge { @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold capitalize; }
+  
+  .status-pending   { background: color-mix(in srgb, var(--accent) 10%, transparent); color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent); }
+  .status-confirmed { background: color-mix(in srgb, var(--brand) 10%, transparent);  color: var(--brand);  border: 1px solid color-mix(in srgb, var(--brand) 20%, transparent); }
+  .status-completed { background: color-mix(in srgb, var(--success) 10%, transparent); color: var(--success); border: 1px solid color-mix(in srgb, var(--success) 20%, transparent); }
+  .status-cancelled { background: color-mix(in srgb, var(--danger) 10%, transparent);  color: var(--danger);  border: 1px solid color-mix(in srgb, var(--danger) 20%, transparent); }
 
   /* Skeleton */
-  .skeleton { background: linear-gradient(90deg, color-mix(in srgb, var(--surface) 95%, black) 25%, color-mix(in srgb, var(--surface) 90%, black) 50%, color-mix(in srgb, var(--surface) 95%, black) 75%); background-size:200% 100%; animation: shimmer 1.5s infinite; border-radius:0.375rem; height:1rem; }
-  @keyframes shimmer { 0% { background-position:200% 0; } 100% { background-position:-200% 0; } }
+  .skeleton { 
+    background: linear-gradient(90deg, color-mix(in srgb, var(--surface) 95%, black) 25%, color-mix(in srgb, var(--surface) 90%, black) 50%, color-mix(in srgb, var(--surface) 95%, black) 75%); 
+    background-size: 200% 100%; 
+    animation: shimmer 1.5s infinite; 
+    @apply rounded-md h-4;
+  }
+  @keyframes shimmer { 0% { background-position: 200% 0 } 100% { background-position: -200% 0 } }
 
-  /* Hybrid glass-card (single clear definition) */
-  .glass-card { border-radius: var(--radius); background: var(--glass); backdrop-filter: blur(12px); border: 1px solid color-mix(in srgb, var(--border) 20%, transparent); }
+  .glass-card {
+    border-radius: var(--radius);
+    background: var(--glass);
+    backdrop-filter: blur(12px);
+    border: 1px solid color-mix(in srgb, var(--border) 20%, transparent);
+  }
 
-  .floating-action { box-shadow: 0 10px 25px rgba(0,0,0,0.12); transition: transform .26s cubic-bezier(.4,0,.2,1); }
+  .floating-action { box-shadow: 0 10px 25px rgba(0,0,0,.12); transition: transform .26s cubic-bezier(.4,0,.2,1); }
   .floating-action:hover { transform: translateY(-2px); }
 
   .card-hover { transition: transform .26s cubic-bezier(.4,0,.2,1), box-shadow .26s; }
-  .card-hover:hover { transform: translateY(-6px); box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
-  .dark .card-hover:hover { box-shadow: 0 20px 40px rgba(0,0,0,0.35); }
+  .card-hover:hover { transform: translateY(-6px); box-shadow: 0 20px 40px rgba(0,0,0,.1); }
+  .dark .card-hover:hover { box-shadow: 0 20px 40px rgba(0,0,0,.35); }
 
   .status-indicator { position: relative; overflow: hidden; }
-  .status-indicator::before { content:''; position:absolute; top:0; left:-100%; width:100%; height:100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent); transition: left .5s ease; }
-  .status-indicator.animate::before { left:100%; }
+  .status-indicator::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,.18), transparent); transition: left .5s ease; }
+  .status-indicator.animate::before { left: 100%; }
 
-  .search-active #statsRow, .search-active #sidebarSection { opacity:0; pointer-events:none; transform:translateY(-20px); transition: all .28s ease; }
+  .search-active #statsRow, .search-active #sidebarSection { opacity: 0; pointer-events: none; transform: translateY(-20px); transition: all .28s ease; }
 
   .active-result { background-color: rgba(99,102,241,0.06); outline: 2px solid rgba(99,102,241,0.12); }
 
-  /* Loader globals */
-  #global-loader .loader-card { background: var(--surface); color: var(--text); border: 1px solid var(--border); box-shadow: var(--shadow); }
+  /* Loader Visual */
+  #global-loader .loader-card { @apply bg-surface text-body border border-border shadow-custom; }
   #global-loader .loader-backdrop { background: color-mix(in srgb, black 45%, transparent); }
-  #global-loader-ring, #global-loader-arc { color: var(--brand); }
   #global-loader-progress { background: linear-gradient(90deg, var(--loader-start), var(--loader-end)); transition: width 400ms ease-out; }
 
-  /* Sidebar & mobile drawer */
-  #mobile-sidebar { background: var(--surface); color: var(--text); border-right: 1px solid var(--border); box-shadow: var(--shadow); }
+  /* Search Results */
+  #searchResults { 
+    @apply bg-surface border border-border rounded-lg shadow-lg overflow-hidden; 
+    max-height: 70vh; 
+    overflow-y: auto; 
+  }
+  
+  #searchResults > div > a { @apply focus:outline-none; }
+  #searchResults a.active-result, #searchResults a:focus { @apply ring-2 ring-brand ring-inset; }
 
-  /* Footer & toasts */
-  footer.site-footer { background: color-mix(in srgb, var(--bg) 85%, transparent); color: var(--muted); border-top: 1px solid var(--border); }
-  .site-toast { background: var(--brand); color: white; }
+  /* Avatar Gradient */
+  .avatar-gradient { background: linear-gradient(135deg, var(--brand), color-mix(in srgb, var(--brand) 60%, var(--accent))); }
 
-  /* Small inline utilities */
-  .spinner-primary { display:inline-block; width:18px; height:18px; border:3px solid rgba(0,0,0,0.12); border-top-color:currentColor; border-radius:50%; animation:spin 1s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  @media (prefers-reduced-motion: reduce) { .spinner-primary { animation: none; } }
-
-  /* Fix native date picker in light mode */
-input[type="date"] {
-  @apply appearance-none;
-  background-color: rgb(255, 255, 255) !important;
-  color: #1f2937 !important;
-  border: 1px solid #d1d5db !important;
+  /* Spinner */
+  .spinner-primary { @apply inline-block w-[18px] h-[18px] border-[3px] rounded-full animate-spin; border-color: rgba(0,0,0,0.12); border-top-color: currentColor; }
 }
 
-input[type="date"]::-webkit-calendar-picker-indicator {
-  opacity: 0.6;
-  filter: invert(0.4);
-}
-
-input[type="date"]:focus {
-  outline: 2px solid rgb(99, 102, 241);
-  outline-offset: 2px;
-}
-
-/* Dark mode override */
-.dark input[type="date"] {
-  background-color: #1f2937 !important;
-  color: #f8fafc !important;
-  border-color: #374151 !important;
-}
-
-.dark input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: invert(1);
-}
-
-/* === FIX LIGHT MODE VISIBILITY === */
-input[type="date"] {
-  @apply appearance-none;
-  background-color: #ffffff !important;
-  color: #1f2937 !important;
-  border: 1px solid #d1d5db !important;
-  border-radius: 0.75rem;
-  padding: 0.5rem 0.75rem;
-}
-
-input[type="date"]::-webkit-calendar-picker-indicator {
-  opacity: 0.6;
-  filter: invert(0.4);
-}
-
-input[type="date"]:focus {
-  outline: 2px solid #6366f1;
-  outline-offset: 2px;
-}
-
-.dark input[type="date"] {
-  background-color: #1f2937 !important;
-  color: #f8fafc !important;
-  border-color: #374151 !important;
-}
-
-.dark input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: invert(1);
-}
-
-/* Search results - ensure solid background */
-#searchResults {
-  @apply bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700;
-}
-#searchResults > div > a {
-  @apply hover:bg-gray-50 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-600;
-}
-}
-
+/* ===========================================================
+   UTILITIES
+   =========================================================== */
 @layer utilities {
-  .lhims-container { max-width:1100px; margin:1.5rem auto; padding:0 1rem; }
+  .lhims-container { max-width: 1100px; margin: 1.5rem auto; padding: 0 1rem; }
 
-  /* gradient overlay used in layout */
-  .page-overlay-gradient { background: linear-gradient(180deg, transparent 0%, color-mix(in srgb, var(--bg) 85%, transparent) 60%); pointer-events:none; }
+  .page-overlay-gradient { background: linear-gradient(180deg, transparent 0%, color-mix(in srgb, var(--bg) 85%, transparent) 60%); pointer-events: none; }
 
-  /* topbar placeholders */
   .site-topbar { background: color-mix(in srgb, var(--bg) 98%, transparent); border-bottom: 1px solid var(--border); }
-}
 
+  /* Mobile Sidebar */
+  #mobile-sidebar { @apply bg-surface text-body border-r border-border shadow-custom; }
+
+  footer.site-footer { background: color-mix(in srgb, var(--bg) 85%, transparent); color: var(--muted); border-top: 1px solid var(--border); }
+
+  .site-toast { @apply bg-brand text-white; }
+
+  /* Unread Visual */
+  .notif-unread { background: rgba(0,0,0,0.02); font-weight: 600; }
+  .opacity-60 { opacity: 0.6 !important; }
+}
