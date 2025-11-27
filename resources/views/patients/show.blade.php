@@ -127,7 +127,7 @@
                                 </div>
                             </div>
 
-                            <div class="flex gap-2 w-full sm:w-auto opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                            <div class="flex gap-2 w-full sm:w-auto ">
                                 <button onclick="openCallModal({{ $appointment->id }}, '{{ addslashes($patient->first_name) }}', '{{ $patient->phone }}')"
                                         class="flex-1 sm:flex-none px-4 py-2 rounded-xl text-sm font-bold transition-all hover:scale-105 active:scale-95"
                                         style="background: var(--bg); color: var(--text); border: 1px solid var(--border);">
@@ -241,15 +241,16 @@
                             <input type="hidden" name="patient_id" value="{{ $patient->id }}">
                             
                             <div class="space-y-5">
-                                <div>
-                                    <label class="block text-sm font-bold mb-2" style="color: var(--muted)">Outcome <span class="text-red-500">*</span></label>
-                                    <select name="result" id="callResult" required class="w-full rounded-xl border-0 ring-1 ring-inset ring-gray-300 dark:ring-gray-700 focus:ring-2 focus:ring-inset focus:ring-brand py-3 text-gray-900 dark:text-white bg-transparent">
-                                        <option value="">Select outcome...</option>
+                                <div class="space-y-1">
+                                    <label class="block text-sm font-medium" style="color:var(--muted)">Call Result <span class="text-red-500">*</span></label>
+                                    <select name="result" id="callResult" required class="w-full px-4 py-3 border rounded-xl"
+                                            style="background:var(--bg); border:1px solid var(--border); color:var(--text);">
+                                        <option value="">Select outcome</option>
                                         <option value="no_answer">No Answer</option>
                                         <option value="rescheduled">Rescheduled</option>
-                                        <option value="will_attend">Confirmed / Will Attend</option>
+                                        <option value="will_attend">Will Attend</option>
                                         <option value="refused">Refused</option>
-                                        <option value="incorrect_number">Wrong Number</option>
+                                        <option value="incorrect_number">Incorrect Number</option>
                                     </select>
                                 </div>
                                 

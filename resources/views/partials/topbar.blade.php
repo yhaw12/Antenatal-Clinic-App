@@ -513,7 +513,7 @@ mobOverlay?.addEventListener('click', closeMobile);
             const href  = esc(it.url ?? '#');
             return `
               <a href="${href}" role="listitem" data-alert-id="${esc(it.id)}"
-                class="block p-3 border-b hover:bg-gray-50 focus:outline-none ${it.is_read ? '' : 'notif-unread'}"
+                class="block p-3 border-b hover:bg-gray-10 focus:outline-none ${it.is_read ? '' : 'notif-unread'}"
                 style="color:var(--text);text-decoration:none;">
                 <div class="flex items-start justify-between">
                   <div class="min-w-0 pr-3">

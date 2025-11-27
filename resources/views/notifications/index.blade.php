@@ -3,127 +3,140 @@
 @section('title', 'Notifications')
 
 @section('content')
-<div class="container mx-auto px-4 py-8 max-w-7xl">
-    <div class="flex items-center justify-between mb-6">
-        <div>
-            <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Notifications</h1>
-            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">All alerts for your account — newest first.</p>
+<div class="min-h-screen font-sans py-8 px-4 sm:px-6 lg:px-8" 
+     style="background: linear-gradient(180deg, color-mix(in srgb, var(--bg) 0%, transparent), color-mix(in srgb, var(--brand) 4%, transparent));">
+
+    <div class="max-w-4xl mx-auto">
+        
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-8">
+            <div>
+                <h1 class="text-2xl font-bold tracking-tight" style="color: var(--text)">Notifications</h1>
+                <p class="text-sm font-medium mt-1" style="color: var(--muted)">Stay updated with patient and system alerts.</p>
+            </div>
+
+            <div class="flex items-center gap-3">
+                @if ($alerts->isNotEmpty())
+                    <form id="dismiss-all-form" action="{{ route('alerts.dismiss-all') }}" method="POST">
+                        @csrf
+                        <button id="dismiss-all-button" type="submit" 
+                                class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm hover:shadow-md active:scale-95"
+                                style="background: var(--surface); color: var(--danger); border: 1px solid color-mix(in srgb, var(--danger) 20%, transparent);">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                            Clear All
+                        </button>
+                    </form>
+                @endif
+
+                <a href="{{ route('dashboard') }}" 
+                   class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm hover:shadow-md active:scale-95"
+                   style="background: var(--brand); color: white;">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+                    Dashboard
+                </a>
+            </div>
         </div>
 
-        <div class="flex items-center gap-3">
-            <form id="dismiss-all-form" action="{{ route('alerts.dismiss-all') }}" method="POST" class="inline">
-                @csrf
-                <button id="dismiss-all-button" type="submit"
-                        class="inline-flex items-center gap-2 px-4 py-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-200 rounded-lg text-sm font-medium hover:bg-red-200 dark:hover:bg-red-800/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500/40 transition">
-                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                    </svg>
-                    Dismiss All
-                </button>
-            </form>
-
-            <a href="{{ route('dashboard') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 text-sm rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 transition">
-                Back to Dashboard
-            </a>
+        @if (isset($error))
+        <div class="mb-6 p-4 rounded-2xl border flex items-start gap-3 shadow-sm animate-fade-in"
+             style="background: color-mix(in srgb, var(--danger) 10%, transparent); border-color: color-mix(in srgb, var(--danger) 20%, transparent); color: var(--danger);">
+            <svg class="w-5 h-5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            <span class="font-medium">{{ $error }}</span>
         </div>
-    </div>
+        @endif
 
-    @if (isset($error))
-    <div role="status" aria-live="polite" class="mb-6">
-        <div class="bg-red-50 dark:bg-red-900 p-4 rounded-md border border-red-200 dark:border-red-700 text-red-800 dark:text-red-200">
-            {{ $error }}
-        </div>
-    </div>
-    @endif
+        @if ($alerts->isNotEmpty())
+        <div class="glass-card rounded-3xl overflow-hidden border shadow-sm" style="background: var(--surface); border-color: var(--border);">
+            <ul role="list" class="divide-y" style="border-color: var(--border);">
+                @foreach ($alerts as $alert)
+                <li class="group p-5 transition-colors hover:bg-gray-50 dark:hover:bg-white/5 relative overflow-hidden">
+                    @if($alert->type === 'critical')
+                        <div class="absolute left-0 top-0 bottom-0 w-1 bg-red-500"></div>
+                    @endif
 
-    @if ($alerts->isNotEmpty())
-    <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
-        <ul role="list" aria-label="Notifications list" class="divide-y divide-gray-200 dark:divide-gray-700/50">
-            @foreach ($alerts as $alert)
-                <li class="p-4 flex items-start gap-4">
-                    <div class="flex-shrink-0 mt-1">
-                        <span class="inline-flex items-center justify-center h-10 w-10 rounded-xl ring-1 ring-gray-100 dark:ring-gray-700
-                            {{ $alert->type === 'critical' ? 'text-red-700 bg-red-100 dark:bg-red-900/30' : 'text-blue-600 bg-blue-50 dark:bg-blue-900/10' }}">
-                            @if ($alert->type === 'critical')
-                                &#9888;
-                            @else
-                                &#128276;
-                            @endif
-                        </span>
-                    </div>
+                    <div class="flex items-start gap-5">
+                        <div class="flex-shrink-0">
+                            <span class="inline-flex items-center justify-center h-12 w-12 rounded-2xl shadow-sm ring-1 ring-inset"
+                                  style="@if($alert->type === 'critical') background: color-mix(in srgb, var(--danger) 10%, transparent); color: var(--danger); ring-color: color-mix(in srgb, var(--danger) 20%, transparent); @else background: color-mix(in srgb, var(--brand) 10%, transparent); color: var(--brand); ring-color: color-mix(in srgb, var(--brand) 20%, transparent); @endif">
+                                @if ($alert->type === 'critical')
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                @else
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 00-5-5.917V5a2 2 0 10-4 0v.083A6 6 0 003 11v3.159c0 .538-.214 1.055-.595 1.436L1 17h5m5 0v1a3 3 0 11-6 0v-1m6 0H5"/></svg>
+                                @endif
+                            </span>
+                        </div>
 
-                    <div class="flex-1 min-w-0">
-                        <div class="flex items-center justify-between gap-4">
-                            <div class="min-w-0">
-                                <a href="{{ $alert->url ?? '#' }}"
-                                   class="block text-sm font-medium text-gray-900 dark:text-gray-100 truncate hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
-                                   @if($alert->url) target="_blank" rel="noopener noreferrer" @endif>
-                                    {{ $alert->message }}
-                                </a>
-                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                    {{ ucfirst($alert->type) }} • {{ optional($alert->created_at)->diffForHumans() ?? '' }}
-                                </p>
-                            </div>
+                        <div class="flex-1 min-w-0 pt-1">
+                            <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                                <div>
+                                    <a href="{{ $alert->url ?? '#' }}" 
+                                       class="block text-base font-bold leading-snug hover:underline focus:outline-none"
+                                       style="color: var(--text);"
+                                       @if($alert->url) target="_blank" rel="noopener noreferrer" @endif>
+                                        {{ $alert->message }}
+                                    </a>
+                                    <div class="mt-1 flex items-center gap-2 text-xs font-medium" style="color: var(--muted);">
+                                        <span class="capitalize">{{ $alert->type }}</span>
+                                        <span>•</span>
+                                        <span>{{ optional($alert->created_at)->diffForHumans() ?? 'Just now' }}</span>
+                                    </div>
+                                </div>
 
-                            <div class="flex items-center gap-2">
-                                {{-- Mark as read form (POST) --}}
-                                <form action="{{ route('alerts.read', $alert) }}" method="POST" class="inline">
-                                    @csrf
-                                    <button type="submit"
-                                            class="text-xs px-3 py-1 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 transition"
-                                            aria-label="Mark this notification as read">
-                                        Mark as Read
-                                    </button>
-                                </form>
-
-                                {{-- If the alert has a custom URL, show "Open" --}}
-                                @if($alert->url)
-                                    <a href="{{ $alert->url }}" target="_blank" rel="noopener noreferrer"
-                                       class="text-xs px-3 py-1 rounded-full bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/10 dark:hover:bg-blue-800 text-blue-700 dark:text-blue-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 transition"
-                                       aria-label="Open notification link">
+                                <div class="flex items-center gap-2 mt-2 sm:mt-0 self-start">
+                                    @if($alert->url)
+                                    <a href="{{ $alert->url }}" target="_blank" class="px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors border"
+                                       style="background: var(--surface); color: var(--brand); border-color: var(--border);">
                                         Open
                                     </a>
-                                @endif
+                                    @endif
+
+                                    <form action="{{ route('alerts.read', $alert) }}" method="POST">
+                                        @csrf
+                                        <button type="submit" class="px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors hover:bg-black/5 dark:hover:bg-white/10"
+                                                style="color: var(--muted);"
+                                                aria-label="Mark as read">
+                                            Dismiss
+                                        </button>
+                                    </form>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </li>
-            @endforeach
-        </ul>
+                @endforeach
+            </ul>
 
-        <div class="px-4 py-3 bg-gray-50 dark:bg-gray-900/80 border-t border-gray-100 dark:border-gray-800/60 flex items-center justify-between">
-            <div class="text-sm text-gray-600 dark:text-gray-400">
-                Showing <strong>{{ $alerts->firstItem() }}</strong> - <strong>{{ $alerts->lastItem() }}</strong> of <strong>{{ $alerts->total() }}</strong>
-            </div>
-
-            <div>
-                {{ $alerts->links() }}
+            <div class="px-6 py-4 border-t flex items-center justify-between" style="border-color: var(--border); background: color-mix(in srgb, var(--bg) 50%, transparent);">
+                <div class="text-sm font-medium" style="color: var(--muted)">
+                    Showing <strong>{{ $alerts->firstItem() }}</strong> - <strong>{{ $alerts->lastItem() }}</strong> of <strong>{{ $alerts->total() }}</strong>
+                </div>
+                <div>
+                    {{ $alerts->links() }}
+                </div>
             </div>
         </div>
+        @else
+        <div class="glass-card rounded-3xl p-12 text-center border border-dashed shadow-sm" style="background: var(--surface); border-color: var(--border);">
+            <div class="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center" style="background: color-mix(in srgb, var(--surface) 90%, transparent);">
+                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color: var(--muted);"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>
+            </div>
+            <h3 class="text-lg font-bold" style="color: var(--text)">All Caught Up</h3>
+            <p class="mt-2 text-sm" style="color: var(--muted)">You have no unread notifications at the moment.</p>
+            <a href="{{ route('dashboard') }}" class="inline-block mt-6 px-6 py-2.5 rounded-xl text-sm font-bold text-white shadow-lg hover:shadow-xl transition-all active:scale-95" style="background: var(--brand);">
+                Return to Dashboard
+            </a>
+        </div>
+        @endif
     </div>
-
-    @else
-        <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-10 text-center">
-            <svg class="mx-auto w-12 h-12 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-6a3 3 0 116 0v6M5 21h14" />
-            </svg>
-            <h3 class="mt-4 text-lg font-semibold text-gray-900 dark:text-gray-100">No notifications</h3>
-            <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">You're all caught up — no unread alerts at the moment.</p>
-            <div class="mt-6">
-                <a href="{{ route('dashboard') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 transition">
-                    Back to dashboard
-                </a>
-            </div>
-        </div>
-    @endif
 </div>
+
+<style>
+    .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+</style>
 @endsection
 
 @push('scripts')
 <script>
-/**
- * Enhance UX: prevent double submits, progressively enhance Dismiss All to use AJAX
- */
 document.addEventListener('DOMContentLoaded', function () {
     const dismissForm = document.getElementById('dismiss-all-form');
     const dismissButton = document.getElementById('dismiss-all-button');
@@ -131,12 +144,12 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!dismissForm || !dismissButton) return;
 
     dismissForm.addEventListener('submit', async function (e) {
-        // progressive enhancement: try AJAX, fallback to regular submit
         e.preventDefault();
 
-        // disable UI
+        // Optimistic UI: Disable and fade button
         dismissButton.disabled = true;
-        dismissButton.classList.add('opacity-60', 'pointer-events-none');
+        dismissButton.style.opacity = '0.7';
+        dismissButton.innerHTML = `<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg> Clearing...`;
 
         try {
             const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
@@ -152,18 +165,12 @@ document.addEventListener('DOMContentLoaded', function () {
             });
 
             if (res.ok) {
-                // reload page (server changed DB), preserving UX
                 window.location.reload();
             } else {
-                // fallback: submit normally to allow server to return an error
-                dismissForm.submit();
+                dismissForm.submit(); // Fallback
             }
         } catch (err) {
-            // network error -> fallback to full form submit
-            dismissForm.submit();
-        } finally {
-            dismissButton.disabled = false;
-            dismissButton.classList.remove('opacity-60', 'pointer-events-none');
+            dismissForm.submit(); // Fallback
         }
     });
 });

@@ -69,8 +69,9 @@
     </div>
   </div>
 
+
   {{-- KPI cards --}}
-  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
     <div class="p-5 rounded-xl shadow flex items-center gap-4" style="background:var(--surface); border:1px solid var(--border);">
       <div class="w-12 h-12 rounded-lg flex items-center justify-center" style="background: color-mix(in srgb, var(--brand) 8%, transparent);">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color:var(--brand)"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
@@ -92,6 +93,21 @@
     </div>
 
     <div class="p-5 rounded-xl shadow flex items-center gap-4" style="background:var(--surface); border:1px solid var(--border);">
+      <div class="w-12 h-12 rounded-lg flex items-center justify-center" style="background: color-mix(in srgb, var(--accent) 8%, transparent);">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color:var(--accent)"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+      </div>
+      <div>
+        <div class="text-sm" style="color:var(--muted)">Attendance Rate</div>
+        @php
+             $rate = ($kpis['total'] > 0) ? round(($kpis['present'] / $kpis['total']) * 100, 1) : 0;
+        @endphp
+        <div class="text-2xl font-semibold" style="color:var(--text)">
+            {{ $rate }}<span class="text-sm font-normal" style="color:var(--muted)">%</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="p-5 rounded-xl shadow flex items-center gap-4" style="background:var(--surface); border:1px solid var(--border);">
       <div class="w-12 h-12 rounded-lg flex items-center justify-center" style="background: color-mix(in srgb, var(--danger) 8%, transparent);">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color:var(--danger)"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
       </div>
@@ -101,7 +117,6 @@
       </div>
     </div>
   </div>
-
   {{-- segmented control for Chart / Table / Comparison --}}
   <div class="mb-5">
     <div class="inline-flex rounded-lg p-1" style="background: color-mix(in srgb, var(--surface) 92%, transparent); border:1px solid var(--border);">
