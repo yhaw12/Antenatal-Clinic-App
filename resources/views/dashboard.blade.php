@@ -6,11 +6,10 @@
     
 <div class="min-h-screen" style="background: linear-gradient(180deg, color-mix(in srgb, var(--bg) 0%, transparent), color-mix(in srgb, var(--brand) 4%, transparent));">
 
-    <!-- Enhanced Header -->
     <header class="sticky top-0 z-40" style="backdrop-filter: blur(12px); background: color-mix(in srgb, var(--bg) 95%, transparent); border-bottom: 1px solid var(--border);">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16 flex-wrap gap-2">
-                <!-- Left Section -->
+                
                 <div class="flex items-center space-x-4 flex-shrink-0">
                     <div class="flex items-center space-x-3">
                         <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background: linear-gradient(90deg, var(--brand), var(--accent));">
@@ -18,88 +17,82 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                             </svg>
                         </div>
-                        {{-- title intentionally left commented as in original --}}
-                        <!-- Add this after your logo SVG (header left) -->
-                    <div class="hidden sm:block ml-2">
-                      <div id="currentDate" class="text-sm font-medium" style="color:var(--muted)"></div>
-                    </div>
-
+                        
+                        <div class="hidden sm:block ml-2">
+                          <div id="currentDate" class="text-sm font-medium" style="color:var(--muted)"></div>
+                        </div>
                     </div>
                 </div>
-
                 
-                <!-- Right Section -->
                 <div class="order-2 sm:order-3 flex items-center space-x-2 justify-end flex-shrink-0">
-                    <!-- Date Filter (hidden on xs) -->
+                    
                     <input 
                         type="date" 
                         id="dateFilter" 
                         class="hidden sm:inline-flex px-3 py-2 rounded-xl text-sm transition-all"
                         style="background: color-mix(in srgb, var(--surface) 90%, transparent); color:var(--text); border:1px solid var(--border);"
                         value="{{ $date ?? \Carbon\Carbon::today()->format('Y-m-d') }}"
-                    >
+                    > 
+
+                    <button 
+                        id="tomorrowBtn"
+                        class="hidden sm:inline-flex items-center justify-center px-3 py-2 rounded-xl text-sm transition-all hover:opacity-80"
+                        title="Tomorrow's Schedule"
+                        style="background: color-mix(in srgb, var(--brand) 10%, transparent); color:var(--brand); border:1px solid color-mix(in srgb, var(--brand) 20%, transparent);">
+                        
+                        <svg class="w-5 h-5 lg:w-4 lg:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                        
+                        <span class="hidden lg:inline ml-2">Tomorrow's Schedule</span>
+                    </button>
                     
-                    <!-- Status Filter (hidden on xs) -->
-                    <select id="statusFilter" class="hidden sm:inline-flex px-3 py-2 rounded-xl text-sm transition-all" style="background: color-mix(in srgb, var(--surface) 90%, transparent); color:var(--text); border:1px solid var(--border);">
-                        <option value="" style="color:var(--text)">All</option>
+                    <select id="statusFilter" class="hidden md:inline-flex px-3 py-2 rounded-xl text-sm transition-all" style="background: color-mix(in srgb, var(--surface) 90%, transparent); color:var(--text); border:1px solid var(--border);">
+                        <option value="" style="color:var(--text)">All Status</option>
                         <option value="scheduled">Scheduled</option>
                         <option value="present">Present</option>
                         <option value="missed">Missed</option>
                     </select>
 
-                <!-- (search) - will collapse full-width on mobile -->
-                <div class="order-3 sm:order-2 flex-1 w-full sm:w-auto sm:max-w-2xl mx-0 sm:mx-8">
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color:var(--muted);" aria-hidden="true">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                            </svg>
-                        </div>
-                        <input 
-                            id="globalSearch" 
-                            class="w-full pl-10 pr-10 py-2 rounded-2xl text-sm transition-all"
-                            style="background: color-mix(in srgb, var(--surface) 95%, transparent); color:var(--text); border:1px solid var(--border);"
-                            placeholder="Search patients, appointments... (Press / to focus)"
-                            type="text"
-                            autocomplete="off"
-                            role="combobox"
-                            aria-autocomplete="list"
-                            aria-expanded="false"
-                            aria-controls="searchResults"
-                            aria-haspopup="listbox"
-                            data-date="{{ $date ?? \Carbon\Carbon::today()->format('Y-m-d') }}"
-                        >
-                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
-                            <kbd class="px-2 py-1 text-xs font-medium rounded" style="background: color-mix(in srgb, var(--surface) 85%, transparent); color:var(--muted); border:1px solid var(--border);">/</kbd>
-                        </div>
-                        
-                        <!-- Enhanced Search Results -->
-                        <div id="searchResults" class="absolute top-full left-0 right-0 mt-2 rounded-2xl shadow-2xl hidden max-h-96 overflow-y-auto z-50" style="background: color-mix(in srgb, var(--surface) 98%, transparent); border:1px solid var(--border);">
-                            <div class="p-4">
-                                <div class="animate-pulse text-center" style="color:var(--muted);">
-                                    <div class="w-6 h-6 mx-auto mb-2 bg-gray-300 rounded-full"></div>
-                                    Searching...
+                    <div class="order-3 sm:order-2 flex-1 w-full sm:w-auto sm:max-w-xs lg:max-w-md mx-0 sm:mx-2">
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color:var(--muted);" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                                </svg>
+                            </div>
+                            <input 
+                                id="globalSearch" 
+                                class="w-full pl-9 pr-8 py-2 rounded-2xl text-sm transition-all focus:ring-2 focus:ring-brand/20"
+                                style="background: color-mix(in srgb, var(--surface) 95%, transparent); color:var(--text); border:1px solid var(--border);"
+                                placeholder="Search..."
+                                type="text"
+                                autocomplete="off"
+                                data-date="{{ $date ?? \Carbon\Carbon::today()->format('Y-m-d') }}"
+                            >
+                            
+                            <div id="searchResults" class="absolute top-full left-0 right-0 mt-2 rounded-2xl shadow-xl hidden max-h-80 overflow-y-auto z-50" style="background: color-mix(in srgb, var(--surface) 98%, transparent); border:1px solid var(--border);">
+                                <div class="p-4">
+                                    <div class="animate-pulse text-center" style="color:var(--muted);">
+                                        Searching...
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                    <!-- Create appointment (prominent) - visible on md+; on small screens Quick Actions and FAB remain -->
-                    <div class="hidden md:block">
+                    <div class="hidden lg:block">
                         <a href="{{ route('appointments.create') }}" 
-                            class="text-sm px-3 py-2 rounded-xl shadow-sm transition-all"
+                            class="text-sm px-3 py-2 rounded-xl shadow-sm transition-all whitespace-nowrap"
                             style="background: var(--brand); color: #fff;"
                             aria-label="Create appointment">
-                            + New Appointment
+                            + New
                         </a>
                     </div>
-                                  
-
-                    <!-- Quick Actions -->
+                                     
                     <div class="relative">
-                        <button id="quickActionsBtn" class="p-2 rounded-xl transition-all" style="background: color-mix(in srgb, var(--surface) 95%, transparent); border:1px solid var(--border); color:var(--muted);">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" style="color:var(--muted);">
+                        <button id="quickActionsBtn" class="p-2 rounded-xl transition-all hover:bg-surface/50" style="border:1px solid var(--border); color:var(--muted);">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/>
                             </svg>
                         </button>
@@ -111,122 +104,120 @@
     </header>
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <!-- Enhanced Stats Row -->
-        <div id="statsRow" class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8 transition-all duration-300">
-            <!-- Total Appointments -->
-            <div class="card-hover glass-card rounded-2xl p-6 relative overflow-hidden" style="background:var(--surface); border:1px solid var(--border); box-shadow:var(--shadow);">
-                <div class="absolute top-0 right-0 w-20 h-20 rounded-bl-2xl" style="background: linear-gradient(135deg, color-mix(in srgb, var(--brand) 18%, transparent), color-mix(in srgb, var(--brand) 8%, transparent));"></div>
-                <div class="relative">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="w-12 h-12 rounded-xl flex items-center justify-center" style="background: linear-gradient(90deg, var(--brand), color-mix(in srgb, var(--brand) 70%, var(--accent)));">
-                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                            </svg>
-                        </div>
-                        <span class="text-xs px-2 py-1 rounded-full font-medium" style="background: color-mix(in srgb, var(--brand) 8%, transparent); color:var(--brand);">Today</span>
+        <div id="statsRow" class="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-6 mb-4 sm:mb-8 transition-all duration-300">
+            
+            <div class="card-hover glass-card rounded-xl sm:rounded-2xl p-2 sm:p-6 relative overflow-hidden" style="background:var(--surface); border:1px solid var(--border); box-shadow:var(--shadow);">
+                <div class="hidden sm:block absolute top-0 right-0 w-20 h-20 rounded-bl-2xl" style="background: linear-gradient(135deg, color-mix(in srgb, var(--brand) 18%, transparent), color-mix(in srgb, var(--brand) 8%, transparent));"></div>
+                
+                <div class="relative flex flex-row sm:flex-col items-center sm:items-start gap-2 sm:gap-0 h-full">
+                    <div class="w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl flex-shrink-0 flex items-center justify-center transition-all" style="background: linear-gradient(90deg, var(--brand), color-mix(in srgb, var(--brand) 70%, var(--accent)));">
+                        <svg class="w-4 h-4 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
                     </div>
-                    <div class="space-y-1">
-                        <h3 class="text-2xl font-bold" id="totalAppointments" style="color:var(--text)">{{ $total ?? 0 }}</h3>
-                        <p class="text-sm" style="color:var(--muted)">Total Appointments</p>
-                        <div class="flex items-center text-xs" id="percentageChange" style="color: {{ $changeDirection === '+' ? 'var(--success)' : 'var(--danger)'}}">
-                            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
-                            </svg>
-                            {{ $changeDirection }}{{ $percentageChange }}% from yesterday
+                    
+                    <div class="flex flex-col justify-center sm:block w-full sm:w-auto overflow-hidden">
+                        <div class="hidden sm:flex items-center justify-between mb-2">
+                             <span class="text-xs px-2 py-1 rounded-full font-medium" style="background: color-mix(in srgb, var(--brand) 8%, transparent); color:var(--brand);">Today</span>
+                        </div>
+                        
+                        <h3 class="text-lg sm:text-3xl font-bold leading-none sm:leading-tight" id="totalAppointments" style="color:var(--text)">{{ $total ?? 0 }}</h3>
+                        <p class="text-[10px] sm:text-sm font-medium opacity-80 truncate" style="color:var(--muted)">Total Appts</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-hover glass-card rounded-xl sm:rounded-2xl p-2 sm:p-6 relative overflow-hidden" style="background:var(--surface); border:1px solid var(--border); box-shadow:var(--shadow);">
+                <div class="hidden sm:block absolute top-0 right-0 w-20 h-20 rounded-bl-2xl" style="background: linear-gradient(135deg, color-mix(in srgb, var(--success) 18%, transparent), color-mix(in srgb, var(--success) 8%, transparent));"></div>
+                
+                <div class="relative flex flex-row sm:flex-col items-center sm:items-start gap-2 sm:gap-0 h-full">
+                    <div class="w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl flex-shrink-0 flex items-center justify-center transition-all" style="background: linear-gradient(90deg, var(--success), color-mix(in srgb, var(--success) 70%, var(--brand)));">
+                        <svg class="w-4 h-4 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    
+                    <div class="flex flex-col justify-center sm:block w-full sm:w-auto overflow-hidden">
+                        <div class="hidden sm:flex items-center justify-between mb-2">
+                            <div class="w-3 h-3 rounded-full animate-pulse" style="background:var(--success)"></div>
+                        </div>
+
+                        <h3 class="text-lg sm:text-3xl font-bold leading-none sm:leading-tight" id="patientsPresent" style="color:var(--text)">{{ $present ?? 0 }}</h3>
+                        <p class="text-[10px] sm:text-sm font-medium opacity-80 truncate" style="color:var(--muted)">Present</p>
+                        
+                        <div class="hidden sm:block w-full rounded-full h-2 mt-2" style="background: color-mix(in srgb, var(--border) 40%, transparent);">
+                            <div class="h-2 rounded-full" style="background:var(--success); width: {{ $total ? round(($present / $total) * 100) : 0 }}%"></div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Patients Present -->
-            <div class="card-hover glass-card rounded-2xl p-6 relative overflow-hidden" style="background:var(--surface); border:1px solid var(--border); box-shadow:var(--shadow);">
-                <div class="absolute top-0 right-0 w-20 h-20 rounded-bl-2xl" style="background: linear-gradient(135deg, color-mix(in srgb, var(--success) 18%, transparent), color-mix(in srgb, var(--success) 8%, transparent));"></div>
-                <div class="relative">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="w-12 h-12 rounded-xl flex items-center justify-center" style="background: linear-gradient(90deg, var(--success), color-mix(in srgb, var(--success) 70%, var(--brand)));">
-                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                        </div>
-                        <div class="w-3 h-3 rounded-full animate-pulse" style="background:var(--success)"></div>
+            <div class="card-hover glass-card rounded-xl sm:rounded-2xl p-2 sm:p-6 relative overflow-hidden" style="background:var(--surface); border:1px solid var(--border); box-shadow:var(--shadow);">
+                <div class="hidden sm:block absolute top-0 right-0 w-20 h-20 rounded-bl-2xl" style="background: linear-gradient(135deg, color-mix(in srgb, var(--danger) 18%, transparent), color-mix(in srgb, var(--danger) 8%, transparent));"></div>
+                
+                <div class="relative flex flex-row sm:flex-col items-center sm:items-start gap-2 sm:gap-0 h-full">
+                    <div class="w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl flex-shrink-0 flex items-center justify-center transition-all" style="background: linear-gradient(90deg, var(--danger), color-mix(in srgb, var(--danger) 70%, var(--brand)));">
+                        <svg class="w-4 h-4 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
                     </div>
-                    <div class="space-y-1">
-                        <h3 class="text-2xl font-bold" id="patientsPresent" style="color:var(--text)">{{ $present ?? 0 }}</h3>
-                        <p class="text-sm" style="color:var(--muted)">Patients Present</p>
-                        <!-- Replace the existing progress bar block with this -->
-                          <div class="w-full rounded-full h-2" role="progressbar"
-                              aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ $total ? round(($present / $total) * 100) : 0 }}" data-progress
-                              style="background: color-mix(in srgb, var(--border) 40%, transparent);">
-                            <div class="h-2 rounded-full" style="width: {{ $total ? round(($present / $total) * 100) : 0 }}%" data-progress-fill></div>
-                          </div>
-
+                    
+                    <div class="flex flex-col justify-center sm:block w-full sm:w-auto overflow-hidden">
+                        <div class="hidden sm:flex items-center justify-between mb-2">
+                            <span class="text-xs px-2 py-1 rounded-full font-medium" style="background: color-mix(in srgb, var(--danger) 8%, transparent); color:var(--danger);">Alert</span>
+                        </div>
+                        
+                        <h3 class="text-lg sm:text-3xl font-bold leading-none sm:leading-tight" id="missedAppointments" style="color:var(--text)">{{ $notArrived ?? 0 }}</h3>
+                        <p class="text-[10px] sm:text-sm font-medium opacity-80 truncate" style="color:var(--muted)">Pending</p>
                     </div>
                 </div>
             </div>
 
-            <!-- Missed Appointments -->
-            <div class="card-hover glass-card rounded-2xl p-6 relative overflow-hidden" style="background:var(--surface); border:1px solid var(--border); box-shadow:var(--shadow);">
-                <div class="absolute top-0 right-0 w-20 h-20 rounded-bl-2xl" style="background: linear-gradient(135deg, color-mix(in srgb, var(--danger) 18%, transparent), color-mix(in srgb, var(--danger) 8%, transparent));"></div>
-                <div class="relative">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="w-12 h-12 rounded-xl flex items-center justify-center" style="background: linear-gradient(90deg, var(--danger), color-mix(in srgb, var(--danger) 70%, var(--brand)));">
-                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                        </div>
-                        <span class="text-xs px-2 py-1 rounded-full font-medium" style="background: color-mix(in srgb, var(--danger) 8%, transparent); color:var(--danger);">Alert</span>
+            <div class="card-hover glass-card rounded-xl sm:rounded-2xl p-2 sm:p-6 relative overflow-hidden" style="background:var(--surface); border:1px solid var(--border); box-shadow:var(--shadow);">
+                <div class="hidden sm:block absolute top-0 right-0 w-20 h-20 rounded-bl-2xl" style="background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 18%, transparent), color-mix(in srgb, var(--accent) 8%, transparent));"></div>
+                
+                <div class="relative flex flex-row sm:flex-col items-center sm:items-start gap-2 sm:gap-0 h-full">
+                    <div class="w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl flex-shrink-0 flex items-center justify-center transition-all" style="background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 70%, var(--brand)));">
+                        <svg class="w-4 h-4 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                        </svg>
                     </div>
-                    <div class="space-y-1">
-                        <h3 class="text-2xl font-bold" id="missedAppointments" style="color:var(--text)">{{ $notArrived ?? 0 }}</h3>
-                        <p class="text-sm" style="color:var(--muted)">Follow-ups Needed</p>
-                        <div class="flex items-center text-xs" style="color:var(--danger)">
-                            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
-                            </svg>
-                            Requires attention
+                    
+                    <div class="flex flex-col justify-center sm:block w-full sm:w-auto overflow-hidden">
+                        <div class="hidden sm:flex items-center justify-between mb-2">
+                             <canvas id="miniChart" width="50" height="30"></canvas>
                         </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Quick Stats -->
-            <div class="card-hover glass-card rounded-2xl p-6 relative overflow-hidden" style="background:var(--surface); border:1px solid var(--border); box-shadow:var(--shadow);">
-                <div class="absolute top-0 right-0 w-20 h-20 rounded-bl-2xl" style="background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 18%, transparent), color-mix(in srgb, var(--accent) 8%, transparent));"></div>
-                <div class="relative">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="w-12 h-12 rounded-xl flex items-center justify-center" style="background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 70%, var(--brand)));">
-                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-                            </svg>
-                        </div>
-                        <canvas id="miniChart" width="50" height="30"></canvas>
-                    </div>
-                    <div class="space-y-1">
-                        <h3 class="text-2xl font-bold" style="color:var(--text)">{{ $total ? round(($present / $total) * 100) : 0 }}%</h3>
-                        <p class="text-sm" style="color:var(--muted)">Attendance Rate</p>
-                        <p class="text-xs" style="color:var(--muted)">This week average</p>
+                        
+                        <h3 class="text-lg sm:text-3xl font-bold leading-none sm:leading-tight" style="color:var(--text)">{{ $total ? round(($present / $total) * 100) : 0 }}%</h3>
+                        <p class="text-[10px] sm:text-sm font-medium opacity-80 truncate" style="color:var(--muted)">Rate</p>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Main grid: Queue + Sidebar -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
-      <!-- Queue Section (left big column) -->
       <div class="lg:col-span-2" id="queueSection">
         <div class="glass-card rounded-2xl p-6 mb-4" style="background:var(--surface); border:1px solid var(--border); box-shadow:var(--shadow);">
-          <div class="flex items-center justify-between mb-4">
+          
+          <div id="futureModeBanner" class="hidden mb-4 p-3 rounded-xl flex items-start space-x-3" style="background: color-mix(in srgb, var(--accent) 15%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent); color: var(--accent);">
+              <svg class="w-5 h-5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+              <div>
+                  <h4 class="font-bold text-sm">Future Schedule Mode</h4>
+                  <p class="text-xs opacity-90">You are viewing appointments for a future date. Use this list for calling patients only. Do not mark attendance yet.</p>
+              </div>
+          </div>
+
+          <div class="flex items-center justify-between">
             <div>
-              <h3 class="text-lg font-bold" style="color:var(--text)">Today's Queue</h3>
-              <p class="text-sm" style="color:var(--muted)">Quick controls for marking attendance</p>
+              <h3 class="text-lg font-bold" id="queueTitle" style="color:var(--text)">Today's Queue</h3>
+              <p class="text-sm" id="queueSubtitle" style="color:var(--muted)">Quick controls for marking attendance</p>
             </div>
             <div class="flex items-center space-x-2">
               <a href="{{ route('daily-queue') . '?date=' . ($date ?? \Carbon\Carbon::today()->format('Y-m-d')) }}" class="text-sm px-3 py-2 rounded-xl transition-all" style="background: color-mix(in srgb, var(--surface) 95%, transparent); border:1px solid var(--border); color:var(--text)">Open full queue</a>
             </div>
           </div>
 
-          <!-- Bulk toolbar (appears when selections exist) -->
           <div id="bulkActions" class="flex items-center justify-between mb-4 opacity-0 transition-opacity duration-200" aria-hidden="true">
             <div class="flex items-center space-x-2">
               <label class="inline-flex items-center text-sm" style="color:var(--muted);">
@@ -240,6 +231,9 @@
             </div>
           </div>
 
+          @php
+             $isFuture = \Carbon\Carbon::parse($date ?? now())->startOfDay()->gt(\Carbon\Carbon::today());
+          @endphp
           <div class="divide-y" id="queueList">
             @foreach($appointments as $appt)
               @php
@@ -276,8 +270,10 @@
                   </div>
 
                   <div class="mt-2 flex items-center justify-end space-x-2">
-                   <button class="mark-present ... text-sm" data-id="{{ $appt->id }}">Mark Present</button>
-                   <button class="mark-absent ... text-sm" data-id="{{ $appt->id }}">Mark Absent</button>
+                   @if(!$isFuture)
+                       <button class="mark-present mark-btn text-sm px-3 py-1.5 rounded-lg text-white" style="background:var(--success)" data-appt-id="{{ $appt->id }}">Mark Present</button>
+                       <button class="mark-absent mark-btn text-sm px-3 py-1.5 rounded-lg text-white" style="background:var(--danger)" data-appt-id="{{ $appt->id }}">Mark Absent</button>
+                   @endif
                     <a href="{{ route('patients.show', $patient->id) }}" class="px-3 py-1.5 rounded-lg text-sm" style="background: color-mix(in srgb, var(--surface) 95%, transparent); border:1px solid var(--border); color:var(--text)">View</a>
                   </div>
                 </div>
@@ -291,9 +287,7 @@
         </div>
       </div>
 
-      <!-- Sidebar -->
       <aside id="sidebar" class="space-y-6">
-        <!-- Call Queue -->
         <div class="glass-card rounded-2xl p-6" style="background:var(--surface); border:1px solid var(--border); box-shadow:var(--shadow);">
           <div class="flex items-center justify-between mb-4">
             <div class="font-bold" style="color:var(--text)">Call Queue</div>
@@ -323,7 +317,6 @@
           </div>
         </div>
 
-        <!-- Recent Activity -->
         <div class="glass-card rounded-2xl p-6" style="background:var(--surface); border:1px solid var(--border); box-shadow:var(--shadow);">
           <div class="flex items-center justify-between mb-4">
             <div class="font-bold" style="color:var(--text)">Recent Activity</div>
@@ -348,7 +341,6 @@
     </div>
     </div>
 
-    <!-- Floating Action Button -->
     <div class="fixed bottom-6 right-6 z-50">
         <button id="fabButton" class="w-14 h-14 rounded-full shadow-2xl flex items-center justify-center floating-action" aria-haspopup="true" aria-expanded="false" style="background: linear-gradient(90deg, var(--brand), var(--accent)); color:#fff;">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -356,7 +348,6 @@
             </svg>
         </button>
         
-        <!-- FAB Menu -->
         <div id="fabMenu" class="absolute bottom-16 right-0 space-y-3 opacity-0 transform scale-95 transition-all duration-200 pointer-events-none" role="menu" aria-hidden="true">
             <button class="flex items-center space-x-3 px-4 py-3 rounded-full shadow-lg floating-action" role="menuitem" style="background: color-mix(in srgb, var(--surface) 96%, transparent); color:var(--text); border:1px solid var(--border);">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -373,10 +364,8 @@
         </div>
     </div>
 
-    <!-- Enhanced Toast Container -->
     <div id="toastContainer" class="fixed top-20 right-6 z-50 space-y-3"></div>
 
-    <!-- Call Modal (cleaned) -->
     <div id="callModal" class="fixed inset-0 z-50 hidden" role="dialog" aria-modal="true" aria-labelledby="callModalTitle">
       <div class="absolute inset-0" onclick="closeModal('callModal')" aria-hidden="true" style="background: rgba(0,0,0,0.6); backdrop-filter: blur(6px)"></div>
       <div class="relative min-h-screen flex items-center justify-center p-4">
@@ -425,9 +414,8 @@
 </style>
 
 <script>
-  // Server-provided data for client-side rendering (safe JSON)
   window.__DASHBOARD = {
-    appointments: {!! json_encode($appointments->items()) !!}, // current page items as array
+    appointments: {!! json_encode($appointments->items()) !!}, 
     appointments_meta: {!! json_encode([
       'current_page' => $appointments->currentPage(),
       'last_page' => $appointments->lastPage(),
@@ -441,14 +429,15 @@
     recentActivities: {!! json_encode($recentActivities->map->only(['id','action','created_at','user'])->values()) !!},
     currentDate: "{{ $date ?? \Carbon\Carbon::today()->format('Y-m-d') }}",
     percentageChange: {{ $percentageChange ?? 0 }},
-    changeDirection: "{{ $changeDirection ?? '' }}"
+    changeDirection: "{{ $changeDirection ?? '' }}",
+    isFuture: {{ \Carbon\Carbon::parse($date ?? now())->startOfDay()->gt(\Carbon\Carbon::today()) ? 'true' : 'false' }}
   };
 </script>
 
 @push('scripts')
 <script>
 (() => {
-  /* ---------- Utilities & CSRF (unchanged) ---------- */
+  /* ---------- Utilities ---------- */
   const $ = (sel, root = document) => (root || document).querySelector(sel);
   const $$ = (sel, root = document) => Array.from((root || document).querySelectorAll(sel));
   const metaCsrf = document.querySelector('meta[name="csrf-token"]');
@@ -464,7 +453,7 @@
       body: JSON.stringify(body)
     }).then(async r => {
       let j = null;
-      try { j = await r.json(); } catch(e){/* ignore parse errors */ }
+      try { j = await r.json(); } catch(e){ }
       return { ok: r.ok, status: r.status, body: j };
     });
   }
@@ -478,12 +467,12 @@
       }
     }).then(async r => {
       let j = null;
-      try { j = await r.json(); } catch(e){/* ignore parse errors */ }
+      try { j = await r.json(); } catch(e){ }
       return { ok: r.ok, status: r.status, body: j };
     });
   }
 
-  /* ---------- Accessible Toasts (replacement) ---------- */
+  /* ---------- Accessible Toasts ---------- */
   function showToast(message, type = 'info', timeout = 3500) {
     const container = document.getElementById('toastContainer');
     if (!container) return;
@@ -500,7 +489,6 @@
     else el.classList.add('bg-white','text-gray-800');
 
     container.appendChild(el);
-    // Dismiss handlers
     const removeFn = () => { el.style.opacity = '0'; el.addEventListener('transitionend', () => el.remove()); };
     const dismissBtn = el.querySelector('button');
     let timer = setTimeout(removeFn, timeout);
@@ -508,11 +496,10 @@
     el.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') { clearTimeout(timer); removeFn(); } });
   }
 
-  /* ---------- Dashboard state (single source of truth) ---------- */
+  /* ---------- Dashboard state ---------- */
   window.__DASHBOARD = window.__DASHBOARD || {};
   const state = window.__DASHBOARD;
 
-  // Ensure appointments is an array (may be paginated object earlier)
   if (!Array.isArray(state.appointments)) {
     try {
       state.appointments = state.appointments?.data || state.appointments || [];
@@ -521,14 +508,14 @@
     }
   }
 
-  // Set initial current date display (if element exists)
+  // Set initial current date display
   const currentDateEl = $('#currentDate');
   if (currentDateEl && state.currentDate) {
     const dateObj = new Date(state.currentDate + 'T00:00:00');
     currentDateEl.textContent = dateObj.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' }) + ' Schedule';
   }
 
-  // Update percentage change display (unchanged behavior but safer)
+  // Percentage Change
   const percentageChangeEl = $('#percentageChange');
   if (percentageChangeEl && state.changeDirection && state.percentageChange !== undefined) {
     const directionClass = state.changeDirection === '+' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400';
@@ -541,7 +528,7 @@
     `;
   }
 
-  /* ---------- helpers for counters & chart (updated) ---------- */
+  /* ---------- Helpers ---------- */
   function getIntFromEl(el) {
     if (!el) return 0;
     const v = parseInt(el.textContent.trim().replace(/[^\d-]/g, ''), 10);
@@ -562,7 +549,6 @@
     ctx.fillStyle = 'rgba(0,0,0,0.05)'; ctx.fillRect(0,0,w,h);
     ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.fillRect(0, Math.round(h*0.25), Math.round(w * (pct/100)), Math.round(h*0.5));
 
-    // Update progress fill element if present (robust selector)
     const progressContainer = document.querySelector('[data-progress]');
     if (progressContainer) {
       const fill = progressContainer.querySelector('[data-progress-fill]');
@@ -570,12 +556,7 @@
         fill.style.width = `${pct}%`;
         progressContainer.setAttribute('aria-valuenow', String(pct));
       }
-    } else {
-      // fallback: try to find the progress bar by previous DOM heuristics
-      const altProgress = document.querySelector('#patientsPresent')?.closest('.glass-card')?.querySelector('div[style*="width"]');
-      if (altProgress) altProgress.style.width = `${pct}%`;
     }
-    // Update attendance rate text
     const rateEl = c.closest('.glass-card')?.querySelector('h3');
     if (rateEl) rateEl.textContent = `${pct}%`;
   }
@@ -599,11 +580,10 @@
     const address = appt.patient?.address ?? '';
     const initials = ((fname[0]||'') + (lname[0]||'')).toUpperCase() || 'P';
     const status = (appt.status || 'scheduled').toLowerCase();
-    // Normalize time parsing: accept 'HH:MM:SS' or 'HH:MM'
+    
     let time = '-';
     if (appt.time) {
       try {
-        // If the time contains seconds or is already full time string, build a Date on epoch for consistent formatting
         const t = appt.time.length <= 8 ? `1970-01-01T${appt.time}` : appt.time;
         time = new Date(t).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
       } catch (e) {
@@ -616,6 +596,15 @@
       : status === 'missed'
         ? `<span class="w-2 h-2 bg-red-400 rounded-full mr-1"></span> Missed`
         : `<span class="w-2 h-2 bg-blue-400 rounded-full mr-1"></span> Scheduled`;
+
+    // Only show buttons if NOT in future mode
+    let actionButtons = '';
+    if (!state.isFuture) {
+        actionButtons = `
+            <button class="mark-present px-3 py-1.5 bg-emerald-500 text-white rounded-lg text-sm" data-appt-id="${appt.id}">Mark Present</button>
+            <button class="mark-absent px-3 py-1.5 bg-red-500 text-white rounded-lg text-sm" data-appt-id="${appt.id}">Mark Absent</button>
+        `;
+    }
 
     return `
       <div class="queue-item flex items-center justify-between py-3" data-appointment-id="${appt.id}" data-status="${status}" tabindex="0">
@@ -633,8 +622,7 @@
           <div><span class="inline-flex status-badge items-center px-2 py-0.5 rounded-full text-xs font-medium ${status}">${badgeHtml}</span></div>
 
           <div class="mt-2 flex items-center justify-end space-x-2">
-            <button class="mark-present px-3 py-1.5 bg-emerald-500 text-white rounded-lg text-sm" data-appt-id="${appt.id}">Mark Present</button>
-            <button class="mark-absent px-3 py-1.5 bg-red-500 text-white rounded-lg text-sm" data-appt-id="${appt.id}">Mark Absent</button>
+            ${actionButtons}
             <a href="/patients/${pid}" class="px-3 py-1.5 border rounded-lg text-sm">View</a>
           </div>
         </div>
@@ -706,11 +694,10 @@
     });
   }
 
-  /* ---------- handleMark: persistent updates, remove present card, cap list (updated to use loading helper) ---------- */
+  /* ---------- handleMark ---------- */
   async function handleMark(ids, endpoint, successMessage) {
     if (!Array.isArray(ids) || ids.length === 0) return showToast('No appointments selected', 'error');
 
-    // Capture previous states from DOM (fall back to state.appointments)
     const prevStates = ids.map(id => {
       const domItem = queueList.querySelector(`[data-appointment-id="${id}"]`);
       if (domItem) return domItem.dataset.status || 'scheduled';
@@ -718,7 +705,6 @@
       return ap ? (ap.status || 'scheduled') : 'scheduled';
     });
 
-    // set loading state on buttons for affected items
     setButtonsLoading(ids, true);
 
     try {
@@ -772,7 +758,7 @@
       if (totalEl) totalEl.textContent = String(totalVal);
       updateMiniChart(presentVal, totalVal);
 
-      // Re-render visible queue (top VISIBLE_LIMIT items)
+      // Re-render visible queue
       renderQueueFromState();
 
       // Reset selection UI
@@ -782,7 +768,6 @@
 
       showToast(successMessage, 'success');
 
-      // If backend returned authoritative counts, prefer them
       if (res.body && typeof res.body.present === 'number') {
         state.present = res.body.present;
         state.notArrived = res.body.notArrived ?? state.notArrived;
@@ -797,12 +782,11 @@
       console.error(err);
       showToast('Network error', 'error');
     } finally {
-      // ensure loading state removed
       setButtonsLoading(ids, false);
     }
   }
 
-  // delegated click handlers for single action
+  // delegated click handlers
   document.addEventListener('click', (e) => {
     const presentBtn = e.target.closest && e.target.closest('.mark-present');
     if (presentBtn) {
@@ -816,7 +800,6 @@
     }
   });
 
-  // bulk handlers
   const bulkMarkPresent = $('#bulkMarkPresent');
   const bulkMarkAbsent = $('#bulkMarkAbsent');
   if (bulkMarkPresent) {
@@ -832,13 +815,57 @@
     });
   }
 
-  /* ---------- Dynamic Date Filter (unchanged but robust) ---------- */
+  /* ---------- Dynamic Date Filter & Tomorrow Logic (UPDATED) ---------- */
   const dateFilter = $('#dateFilter');
   const statusFilter = $('#statusFilter');
   const dashboardUrl = '{{ route("dashboard") }}';
+  
+  const queueTitle = $('#queueTitle');
+  const queueSubtitle = $('#queueSubtitle');
+  const futureBanner = $('#futureModeBanner');
+
+  function getDateDiff(dateString) {
+      const today = new Date();
+      today.setHours(0,0,0,0);
+      
+      const target = new Date(dateString + 'T00:00:00');
+      target.setHours(0,0,0,0);
+      
+      const diffTime = target - today;
+      return Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+  }
 
   async function loadDataForDate(newDate, status = '') {
     showToast('Loading data...', 'info');
+
+    const diff = getDateDiff(newDate);
+    state.isFuture = diff > 0; // Update state boolean
+    
+    // UPDATE GUARDRAILS UI based on date
+    if (state.isFuture) {
+        // FUTURE MODE
+        if(queueTitle) queueTitle.textContent = "Tomorrow's Schedule";
+        if(queueSubtitle) queueSubtitle.textContent = "Call List Mode • Preparing for upcoming appointments";
+        if(futureBanner) futureBanner.classList.remove('hidden');
+        if(currentDateEl) currentDateEl.style.color = "var(--accent)";
+        if(bulkActions) bulkActions.classList.add('hidden'); // Also hide bulk actions in future mode
+    } else if (diff < 0) {
+        // PAST MODE
+        if(queueTitle) queueTitle.textContent = "Past Archive";
+        if(queueSubtitle) queueSubtitle.textContent = "Historical view • Read only";
+        if(futureBanner) futureBanner.classList.add('hidden');
+        if(currentDateEl) currentDateEl.style.color = "var(--muted)";
+        if(bulkActions) bulkActions.classList.remove('hidden');
+    } else {
+        // TODAY MODE (Reset)
+        if(queueTitle) queueTitle.textContent = "Today's Queue";
+        if(queueSubtitle) queueSubtitle.textContent = "Quick controls for marking attendance";
+        if(futureBanner) futureBanner.classList.add('hidden');
+        if(currentDateEl) currentDateEl.style.color = "var(--muted)";
+        if(bulkActions) bulkActions.classList.remove('hidden');
+    }
+
+    if(dateFilter) dateFilter.value = newDate;
 
     try {
       const statsUrl = `/dashboard/stats?date=${newDate}${status ? '&status=' + status : ''}`;
@@ -859,7 +886,7 @@
       const apptsRes = await ajaxGet(apptsUrl);
       if (apptsRes.ok && Array.isArray(apptsRes.body)) {
         state.appointments = apptsRes.body;
-        renderQueueFromState();
+        renderQueueFromState(); // This will now check state.isFuture and hide buttons
       } else {
         window.location.href = `${dashboardUrl}?date=${newDate}${status ? '&status=' + status : ''}`;
         return;
@@ -870,7 +897,7 @@
         currentDateEl.textContent = dateObj.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' }) + ' Schedule';
       }
 
-      showToast('Data updated for selected date', 'success');
+      showToast('Data updated', 'success');
     } catch (err) {
       console.error(err);
       showToast('Failed to load data. Reloading page...', 'error');
@@ -878,6 +905,7 @@
     }
   }
 
+  // EVENT LISTENERS
   if (dateFilter) {
     dateFilter.addEventListener('change', (e) => {
       const newDate = e.target.value;
@@ -893,35 +921,32 @@
     });
   }
 
-  /* ---------- Theme Toggle (unchanged) ---------- */
+  const tomorrowBtn = $('#tomorrowBtn');
+  if (tomorrowBtn) {
+      tomorrowBtn.addEventListener('click', () => {
+          const tomorrow = new Date();
+          tomorrow.setDate(tomorrow.getDate() + 1);
+          // Format YYYY-MM-DD
+          const yyyy = tomorrow.getFullYear();
+          const mm = String(tomorrow.getMonth() + 1).padStart(2, '0');
+          const dd = String(tomorrow.getDate()).padStart(2, '0');
+          const tomorrowStr = `${yyyy}-${mm}-${dd}`;
+          
+          loadDataForDate(tomorrowStr, '');
+      });
+  }
+
   const themeToggle = $('#themeToggle');
-  const html = document.documentElement;
-  const moonIcon = $('.moon-icon');
-  const sunIcon = $('.sun-icon');
-
-  const savedTheme = localStorage.getItem('theme');
-  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const isDark = savedTheme === 'dark' || (!savedTheme && prefersDark);
-
-  if (isDark) { html.classList.add('dark'); } else { html.classList.remove('dark'); }
-  if (moonIcon) moonIcon.classList.toggle('hidden', !isDark);
-  if (moonIcon) moonIcon.classList.toggle('block', isDark);
-  if (sunIcon) sunIcon.classList.toggle('hidden', isDark);
-  if (sunIcon) sunIcon.classList.toggle('block', !isDark);
-
   if (themeToggle) {
     themeToggle.addEventListener('click', () => {
+      const html = document.documentElement;
       const currentIsDark = html.classList.contains('dark');
-      const newIsDark = !currentIsDark;
-      html.classList.toggle('dark', newIsDark);
-      localStorage.setItem('theme', newIsDark ? 'dark' : 'light');
-      if (moonIcon) { moonIcon.classList.toggle('hidden', !newIsDark); moonIcon.classList.toggle('block', newIsDark); }
-      if (sunIcon) { sunIcon.classList.toggle('hidden', newIsDark); sunIcon.classList.toggle('block', !newIsDark); }
-      showToast(newIsDark ? 'Switched to dark mode' : 'Switched to light mode', 'success', 2000);
+      html.classList.toggle('dark', !currentIsDark);
+      localStorage.setItem('theme', !currentIsDark ? 'dark' : 'light');
     });
   }
 
-  /* ---------- Search (debounced + keyboard nav & roles) ---------- */
+  /* ---------- Search ---------- */
   (function attachSearch() {
     const searchInput = document.getElementById('globalSearch');
     const resultsBox = document.getElementById('searchResults');
@@ -1017,7 +1042,6 @@
       }, 300);
     });
 
-    // keyboard navigation
     searchInput.addEventListener('keydown', (e) => {
       if (resultsBox.classList.contains('hidden')) return;
       const len = currentItems.length;
@@ -1033,13 +1057,11 @@
       }
     });
 
-    // click result -> close box
     resultsBox.addEventListener('click', (ev) => {
       const anchor = ev.target.closest('a[role="option"]');
       if (anchor) resultsBox.classList.add('hidden');
     });
 
-    // click outside to close
     document.addEventListener('click', (ev) => {
       if (!ev.target.closest('#searchResults') && !ev.target.closest('#globalSearch')) {
         resultsBox.classList.add('hidden');
@@ -1047,11 +1069,10 @@
     });
   })();
 
-  /* ---------- FAB behavior improvements ---------- */
+  /* ---------- FAB ---------- */
   const fabButton = document.getElementById('fabButton');
   const fabMenu = document.getElementById('fabMenu');
   if (fabButton && fabMenu) {
-    // ensure initial a11y attributes
     fabButton.setAttribute('aria-expanded', 'false');
     fabMenu.classList.add('pointer-events-none','opacity-0','scale-95');
 
@@ -1080,7 +1101,6 @@
     });
   }
 
-  /* ---------- Search keyboard shortcut (/) and ESC behavior already in attachSearch; keep global shortcuts ---------- */
   document.addEventListener('keydown', (e) => {
     if (e.key === '/' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
       e.preventDefault();
@@ -1089,28 +1109,8 @@
     }
   });
 
-  // Click outside to close search results already handled inside attachSearch
 })();
 </script>
 @endpush
 
 @endsection
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

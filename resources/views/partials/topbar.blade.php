@@ -182,7 +182,6 @@ $menuItems = $menuItems ?? $items;
                     </div>
                     <div class="hidden lg:block min-w-0 flex-1">
                         <div class="text-sm font-semibold truncate" style="color:var(--text)">{{ auth()->user()->name ?? 'User' }}</div>
-                        {{-- <div class="text-xs truncate" style="color:var(--muted)">{{ auth()->user()->role ?? 'Nurse' }}</div> --}}
                     </div>
                     <svg class="h-4 w-4 transition-transform duration-300 group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                 </button>
@@ -212,10 +211,7 @@ $menuItems = $menuItems ?? $items;
 </header>
 
 {{-- 
-    MOBILE SIDEBAR (Fixed Height Issue)
-    - Added z-[100] to override header
-    - Used h-[100dvh] to ensure full screen height on mobile
-    - Added flex flex-col to panel to ensure layout distributes correctly
+    MOBILE SIDEBAR
 --}}
 <aside id="mobile-sidebar" class="fixed inset-0 z-[100] lg:hidden hidden" aria-hidden="true" role="dialog" aria-modal="true">
     {{-- Overlay --}}
@@ -299,7 +295,6 @@ $menuItems = $menuItems ?? $items;
                     <strong>Role:</strong> 
                     <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wide"
                         style="background: color-mix(in srgb, var(--brand) 10%, transparent); color: var(--brand); border: 1px solid color-mix(in srgb, var(--brand) 20%, transparent);">
-                        {{-- Get role name, remove underscores, capitalize --}}
                         {{ auth()->user()->getRoleNames()->first() ? str_replace('_', ' ', ucfirst(auth()->user()->getRoleNames()->first())) : (auth()->user()->role ?? 'Staff') }}
                     </span>
                 </p>
@@ -347,7 +342,7 @@ const $$ = (s, el = document) => Array.from(el.querySelectorAll(s));
 const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const enterCls = ['opacity-100', 'scale-100', 'translate-x-0'];
-const leaveCls = ['opacity-0', 'scale-95', '-translate-x-full']; // Changed from -translate-x-6 to full for correct slide
+const leaveCls = ['opacity-0', 'scale-95', '-translate-x-full'];
 
 function addCls(el, cls) { cls.forEach(c => el.classList.add(c)); }
 function rmCls(el, cls)  { cls.forEach(c => el.classList.remove(c)); }
@@ -408,7 +403,6 @@ $$('[data-dropdown]').forEach(btn => {
         const open = btn.getAttribute('aria-expanded') === 'true';
         if (open) { hide(panel, btn); if (panel._untrap) { panel._untrap(); panel._untrap = null; } }
         else {
-            // Close others
             $$('[data-dropdown][aria-expanded="true"]').forEach(other => other.click());
             show(panel, btn);
             panel._untrap = trapFocus(panel);
@@ -443,7 +437,6 @@ function openMobile() {
     requestAnimationFrame(() => {
         mobOverlay.classList.remove('opacity-0', 'pointer-events-none');
         mobOverlay.classList.add('opacity-100');
-        // Sidebar animation classes
         mobPanel.classList.remove('-translate-x-full', 'opacity-0');
         mobPanel.classList.add('translate-x-0', 'opacity-100');
     });
@@ -458,11 +451,8 @@ function closeMobile() {
     mobSidebar.setAttribute('aria-hidden', 'true');
     mobOverlay.classList.add('opacity-0');
     mobOverlay.classList.remove('opacity-100');
-    
-    // Sidebar animation classes
     mobPanel.classList.add('-translate-x-full', 'opacity-0');
     mobPanel.classList.remove('translate-x-0', 'opacity-100');
-
     document.body.classList.remove('overflow-hidden');
     if (mobUntrap) { mobUntrap(); mobUntrap = null; }
     setTimeout(() => mobSidebar.classList.add('hidden'), 300);
@@ -562,5 +552,43 @@ mobOverlay?.addEventListener('click', closeMobile);
     clear?.addEventListener('click', dismissAll);
     bell.addEventListener('click', () => setTimeout(() => { if (drop.getAttribute('aria-hidden') === 'false') load(); }, 40));
     load();
+})();
+
+/* ----------------------------------------------------------------------
+   6. THEME TOGGLE (Fixed Logic)
+----------------------------------------------------------------------- */
+(() => {
+    const btn = document.getElementById('theme-toggle-main');
+    const icon = btn?.querySelector('#theme-icon path');
+    const html = document.documentElement;
+
+    const sunPath  = "M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z";
+    const moonPath = "M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z";
+
+    if (!btn || !icon) return;
+
+    function setTheme(dark) {
+        if (dark) {
+            html.classList.add('dark');
+            icon.setAttribute('d', sunPath);
+            localStorage.setItem('theme', 'dark');
+        } else {
+            html.classList.remove('dark');
+            icon.setAttribute('d', moonPath);
+            localStorage.setItem('theme', 'light');
+        }
+    }
+
+    // Init based on storage or system preference
+    const saved = localStorage.getItem('theme');
+    const system = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const isDark = saved === 'dark' || (!saved && system);
+    setTheme(isDark);
+
+    // Toggle on click
+    btn.addEventListener('click', () => {
+        // Toggle based on current DOM class existence
+        setTheme(!html.classList.contains('dark'));
+    });
 })();
 </script>
