@@ -16,6 +16,7 @@
 
             <div class="flex items-center gap-3">
                 @if ($alerts->isNotEmpty())
+                    {{-- Dismiss All Form (Handled by JS for spinner, but works without it too) --}}
                     <form id="dismiss-all-form" action="{{ route('alerts.dismiss-all') }}" method="POST">
                         @csrf
                         <button id="dismiss-all-button" type="submit" 
@@ -36,11 +37,19 @@
             </div>
         </div>
 
-        @if (isset($error))
+        @if (session('success'))
+        <div class="mb-6 p-4 rounded-2xl border flex items-start gap-3 shadow-sm animate-fade-in"
+             style="background: color-mix(in srgb, var(--success) 10%, transparent); border-color: color-mix(in srgb, var(--success) 20%, transparent); color: var(--success);">
+            <svg class="w-5 h-5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            <span class="font-medium">{{ session('success') }}</span>
+        </div>
+        @endif
+
+        @if (isset($error) || session('error'))
         <div class="mb-6 p-4 rounded-2xl border flex items-start gap-3 shadow-sm animate-fade-in"
              style="background: color-mix(in srgb, var(--danger) 10%, transparent); border-color: color-mix(in srgb, var(--danger) 20%, transparent); color: var(--danger);">
             <svg class="w-5 h-5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-            <span class="font-medium">{{ $error }}</span>
+            <span class="font-medium">{{ $error ?? session('error') }}</span>
         </div>
         @endif
 
@@ -48,7 +57,7 @@
         <div class="glass-card rounded-3xl overflow-hidden border shadow-sm" style="background: var(--surface); border-color: var(--border);">
             <ul role="list" class="divide-y" style="border-color: var(--border);">
                 @foreach ($alerts as $alert)
-                <li class="group p-5 transition-colors hover:bg-gray-50 dark:hover:bg-white/5 relative overflow-hidden">
+                <li class="group p-5 transition-colors hover:bg-gray-50 dark:hover:bg-white/5 relative overflow-hidden {{ $alert->is_read ? 'opacity-70' : '' }}">
                     @if($alert->type === 'critical')
                         <div class="absolute left-0 top-0 bottom-0 w-1 bg-red-500"></div>
                     @endif
@@ -89,6 +98,7 @@
                                     </a>
                                     @endif
 
+                                    @if(!$alert->is_read)
                                     <form action="{{ route('alerts.read', $alert) }}" method="POST">
                                         @csrf
                                         <button type="submit" class="px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors hover:bg-black/5 dark:hover:bg-white/10"
@@ -97,6 +107,7 @@
                                             Dismiss
                                         </button>
                                     </form>
+                                    @endif
                                 </div>
                             </div>
                         </div>
@@ -159,7 +170,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': token,
-                    'Accept': 'application/json'
+                    'Accept': 'application/json' // Crucial: tells Controller to return JSON
                 },
                 body: JSON.stringify({})
             });
@@ -167,10 +178,11 @@ document.addEventListener('DOMContentLoaded', function () {
             if (res.ok) {
                 window.location.reload();
             } else {
-                dismissForm.submit(); // Fallback
+                dismissForm.submit(); // Fallback if AJAX fails logic but not network
             }
         } catch (err) {
-            dismissForm.submit(); // Fallback
+            // If AJAX fails completely (e.g. CSRF token mismatch), fall back to standard submit
+            dismissForm.submit(); 
         }
     });
 });
