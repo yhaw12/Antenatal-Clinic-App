@@ -5,6 +5,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Visit;
 use App\Models\User;
+use App\Models\Appointment;
 use App\Models\Patient;
 
 class ReferralWebController extends Controller
@@ -27,27 +28,34 @@ class ReferralWebController extends Controller
     {
         $data = $request->validate([
             'patient_id' => 'required|exists:patients,id',
-            'visit_id' => 'nullable|exists:visits,id',
-            'referred_to_user_id' => 'required|exists:users,id',
-            'reason' => 'required|string'
+            // 'appointment_id' is helpful to link it to the specific schedule
+            'appointment_id' => 'nullable|exists:appointments,id', 
+            'reason' => 'required|string|max:1000'
         ]);
 
-        // create or update a visit referral
-        if($data['visit_id']){
-            $visit = Visit::find($data['visit_id']);
-            $visit->update(['referral_to' => $data['referred_to_user_id']]);
-        } else {
-            // create a minimal visit with referral
-            Visit::create([
-                'appointment_id' => null,
-                'patient_id' => $data['patient_id'],
-                'user_id' => $request->user()->id,
-                'arrived_at' => now(),
-                'referral_to' => $data['referred_to_user_id'],
-                'complaints' => $data['reason']
-            ]);
+        // Logic: Create a Visit record marked as a "Referral"
+        // We use the 'complaints' column to store the referral notes/reason
+        
+        Visit::create([
+            'patient_id' => $data['patient_id'],
+            'user_id'    => $request->user()->id, // The staff member creating the referral
+            'appointment_id' => $data['appointment_id'] ?? null,
+            'arrived_at' => now(),
+            'complaints' => "REFERRAL NOTES: " . $data['reason'], // Save notes here
+            // 'referral_to' => ... (If you add a column for doctor ID later, add it here)
+            // We set a flag or special status if your DB has one, e.g., is_referral = true
+            // If you don't have a specific column, the text prefix helps identify it.
+        ]);
+
+        // Optional: Mark the appointment as 'seen' or 'completed' so it leaves the queue
+        if (!empty($data['appointment_id'])) {
+            Appointment::where('id', $data['appointment_id'])->update(['status' => 'seen']);
         }
 
-        return redirect()->route('referrals.index')->with('success','Referral recorded');
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json(['success' => true, 'message' => 'Referral note saved']);
+        }
+
+        return back()->with('success', 'Referral recorded');
     }
 }

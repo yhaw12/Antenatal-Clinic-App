@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Appointment;
 use App\Models\CallLog;
+use App\Models\Visit; // <--- Added this import
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -56,7 +57,6 @@ class ReportWebController extends Controller
      */
     private function generateReportResponse(Carbon $from, Carbon $to, ?string $status)
     {
-        // Get all data using the shared logic
         $report = $this->getReportData($from, $to, $status);
 
         return view('reports.index', [
@@ -66,7 +66,7 @@ class ReportWebController extends Controller
             'appts'      => $report['appts'],
             'kpis'       => $report['kpis'],
             'chart'      => $report['chart'],
-            'callStats'  => $report['callStats'], // Advanced Metric
+            'callStats'  => $report['callStats'],
             'comparison' => null,
         ]);
     }
@@ -82,11 +82,10 @@ class ReportWebController extends Controller
         $m2Start = Carbon::parse($data['month2'])->startOfMonth();
         $m2End   = $m2Start->copy()->endOfMonth();
 
-        // Fetch data for both months
         $m1Data = $this->getReportData($m1Start, $m1End, $data['status'] ?? null);
         $m2Data = $this->getReportData($m2Start, $m2End, $data['status'] ?? null);
 
-        // Calculate Growth/Decline
+        // Calculate Growth/Decline based on Total Appointments
         $total1 = $m1Data['kpis']['total'];
         $total2 = $m2Data['kpis']['total'];
         $change = $total2 - $total1;
@@ -110,7 +109,6 @@ class ReportWebController extends Controller
             ]
         ];
 
-        // Return empty pagination for lists when comparing
         $emptyPaginator = new LengthAwarePaginator(collect([]), 0, 25);
 
         return view('reports.index', [
@@ -126,10 +124,7 @@ class ReportWebController extends Controller
     }
 
     /**
-     * Core Logic: Fetches Appointments, KPIs, Charts, and Call Stats.
-     */
-    /**
-     * Core Logic: Fetches Appointments, KPIs, Charts, Call Stats, and Workload.
+     * Core Logic: Fetches Appointments, KPIs, Charts, Call Stats, Workload, Referrals, Cancellations.
      */
     private function getReportData(Carbon $from, Carbon $to, ?string $status): array
     {
@@ -152,7 +147,7 @@ class ReportWebController extends Controller
             }
         }
 
-        // 4. Fetch Paginated List (for the table)
+        // 4. Fetch Paginated List
         $listQuery = clone $baseQuery;
         $listQuery->with('patient')->orderBy($dateColumn, 'desc');
         if (Schema::hasColumn('appointments', 'time')) {
@@ -161,7 +156,6 @@ class ReportWebController extends Controller
         $appts = $listQuery->paginate(25)->appends(request()->query());
 
         // 5. Calculate Standard KPIs
-        // We clone baseQuery to avoid mutating the original builder state
         $total = (clone $baseQuery)->count();
         $present = (clone $baseQuery)->whereIn('status', ['queued', 'in_room', 'seen', 'present'])->count();
         $notArrived = (clone $baseQuery)->whereIn('status', ['missed', 'absent'])->count();
@@ -169,8 +163,7 @@ class ReportWebController extends Controller
         $attendanceRate = $total > 0 ? round(($present / $total) * 100, 1) : 0;
 
         // 6. Calculate Workload (New vs Review)
-        // Logic: "New" = Patient registered on the same day as the appointment
-        // We fetch the collection here to filter in PHP (easier than complex SQL dates diffs)
+        // Fetch minimal data to calculate dates in PHP
         $allInPeriod = (clone $baseQuery)->with('patient:id,created_at')->get();
         
         $newVisits = $allInPeriod->filter(function($appt) {
@@ -179,15 +172,22 @@ class ReportWebController extends Controller
 
         $reviews = max(0, $total - $newVisits);
 
-        // 7. Call Effectiveness Stats
-        // Group by result (no_answer, confirmed, etc)
+        // 7. Calculate Clinical Referrals
+        $referrals = Visit::whereBetween('created_at', [$from->startOfDay(), $to->endOfDay()])
+            ->whereNotNull('referral_to')
+            ->count();
+
+        // 8. Calculate Cancellations
+        $cancelled = (clone $baseQuery)->where('status', 'cancelled')->count();
+
+        // 9. Call Effectiveness Stats
         $callStats = CallLog::whereBetween('call_time', [$from->startOfDay(), $to->endOfDay()])
             ->select('result', DB::raw('count(*) as total'))
             ->groupBy('result')
             ->pluck('total', 'result')
             ->toArray();
 
-        // 8. Daily Trend Chart Data
+        // 10. Daily Trend Chart Data
         $chartQuery = clone $baseQuery;
         $dailyCounts = $chartQuery->select(
             DB::raw("DATE($dateColumn) as day"),
@@ -198,7 +198,6 @@ class ReportWebController extends Controller
         ->pluck('count', 'day')
         ->toArray();
 
-        // Fill gaps in the chart (ensure days with 0 appointments show up)
         $labels = [];
         $counts = [];
         $period = \Carbon\CarbonPeriod::create($from, $to);
@@ -216,8 +215,10 @@ class ReportWebController extends Controller
                 'present'    => $present,
                 'notArrived' => $notArrived,
                 'rate'       => $attendanceRate,
-                'new'        => $newVisits, // New Metric
-                'review'     => $reviews    // New Metric
+                'new'        => $newVisits,
+                'review'     => $reviews,
+                'referrals'  => $referrals, // New Metric
+                'cancelled'  => $cancelled  // New Metric
             ],
             'chart'     => ['labels' => $labels, 'counts' => $counts],
             'callStats' => $callStats,
