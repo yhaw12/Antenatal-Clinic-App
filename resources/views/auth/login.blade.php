@@ -25,19 +25,22 @@
                         Secure access for health professionals. Manage patient records, appointments, and vitals efficiently.
                     </p>
 
-                    <div class="grid grid-cols-2 gap-4 mb-6">
+                    {{-- UPDATED: Single Image Layout --}}
+                    <div class="mb-6">
                         <div class="rounded-xl overflow-hidden border border-border bg-surface/50 shadow-sm p-2">
-                            <img src="{{ asset('images/anc-banner-1.svg') }}" alt="Maternal care" class="w-full h-32 object-cover rounded-lg opacity-90 hover:opacity-100 transition-opacity">
-                        </div>
-                        <div class="rounded-xl overflow-hidden border border-border bg-surface/50 shadow-sm p-2">
-                            <img src="{{ asset('images/anc-banner-2.svg') }}" alt="Clinic care" class="w-full h-32 object-cover rounded-lg opacity-90 hover:opacity-100 transition-opacity">
+                            <img src="{{ asset('images/anc-banner.png') }}" alt="Maternal care" class="w-full h-48 object-cover rounded-lg opacity-90 hover:opacity-100 transition-opacity">
                         </div>
                     </div>
 
                     <div class="mt-auto pt-4 border-t border-border">
                         <p class="text-xs text-muted flex items-center gap-2">
                             <svg class="w-4 h-4 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                            Support: admin@{{ request()->getHost() }}
+                            
+                            <span>Support:</span>
+                            
+                            <a href="mailto:yooxing11@gmail.com" class="hover:underline hover:text-body transition-colors">
+                                admin@{{ request()->getHost() }}
+                            </a>
                         </p>
                     </div>
                 </div>
@@ -52,12 +55,14 @@
                     <p class="text-xs text-muted mt-1">Enter your credentials to continue.</p>
                 </div>
 
+                {{-- Removed autocomplete="off" from form tag so specific inputs can control it --}}
                 <form method="POST" action="{{ route('login') }}" class="space-y-5">
                     @csrf
 
                     <div>
                         <label class="block text-xs font-bold text-muted uppercase tracking-wider mb-1.5">Email Address</label>
-                        <input name="email" type="email" value="{{ old('email') }}" required autofocus
+                        {{-- CHANGED: autocomplete="email" allows browser to suggest emails --}}
+                        <input name="email" type="email" value="{{ old('email') }}" required autofocus autocomplete="email"
                                class="w-full rounded-lg border border-border bg-surface text-body px-4 py-2.5 shadow-sm focus:outline-none focus:ring-2 focus:ring-brand/50 focus:border-brand transition-all placeholder-muted/50" 
                                placeholder="doctor@clinic.com" />
                         @error('email') <div class="text-xs text-danger mt-1 font-medium">{{ $message }}</div> @enderror
@@ -65,9 +70,22 @@
 
                     <div>
                         <label class="block text-xs font-bold text-muted uppercase tracking-wider mb-1.5">Password</label>
-                        <input name="password" type="password" required
+                        
+                        {{-- 
+                             ANTI-AUTOFILL TRICK: 
+                             1. autocomplete="new-password": Tells browser it's not a login field.
+                             2. readonly: Prevents browser from filling it on page load.
+                             3. onfocus: Removes readonly so you can type when you click it.
+                        --}}
+                        <input name="password" 
+                               type="password" 
+                               required 
+                               autocomplete="new-password"
+                               readonly
+                               onfocus="this.removeAttribute('readonly');"
                                class="w-full rounded-lg border border-border bg-surface text-body px-4 py-2.5 shadow-sm focus:outline-none focus:ring-2 focus:ring-brand/50 focus:border-brand transition-all" 
                                placeholder="••••••••" />
+                               
                         @error('password') <div class="text-xs text-danger mt-1 font-medium">{{ $message }}</div> @enderror
                     </div>
 
@@ -89,7 +107,6 @@
 
                 </form>
 
-                {{-- Footer / Registration Link --}}
                 @if(env('APP_ALLOW_TEMP_REGISTER', false))
                     <div class="mt-8 pt-6 border-t border-border text-center">
                         <p class="text-xs text-muted mb-3">No account yet?</p>
@@ -100,7 +117,7 @@
                 @endif
 
                 <div class="mt-6 text-center">
-                    <p class="text-[10px] text-muted/60">
+                    <p class="text-xs text-muted/60">
                         Authorized personnel only. <br> Patient data privacy laws apply.
                     </p>
                 </div>

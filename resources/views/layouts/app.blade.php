@@ -330,6 +330,13 @@
             // Show spinner on form submit (except data-no-loader)
             document.addEventListener('submit', e => {
                 if (e.target.tagName === 'FORM' && !e.target.hasAttribute('data-no-loader')) {
+                    
+                    // --- NEW: Stop if form has validation errors (required fields, etc.) ---
+                    if (!e.target.checkValidity()) {
+                        return; 
+                    }
+                    // ----------------------------------------------------------------------
+
                     window.App.loader.show();
                 }
             });

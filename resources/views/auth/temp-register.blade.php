@@ -74,9 +74,9 @@
             </form>
 
             <div class="mt-8 pt-6 border-t border-border text-center">
-                <p class="text-[10px] text-muted/60 font-mono bg-gray-100 dark:bg-white/5 inline-block px-2 py-1 rounded">
+                {{-- <p class="text-[10px] text-muted/60 font-mono bg-gray-100 dark:bg-white/5 inline-block px-2 py-1 rounded">
                     ENV: APP_ALLOW_TEMP_REGISTER=true
-                </p>
+                </p> --}}
             </div>
         </div>
     </div>

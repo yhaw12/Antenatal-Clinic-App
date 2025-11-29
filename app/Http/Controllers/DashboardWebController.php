@@ -13,94 +13,98 @@ use Carbon\Carbon;
 
 class DashboardWebController extends Controller
 {
-    public function stats(Request $request)
+   public function stats(Request $request)
     {
-        $date = $request->query('date', \Carbon\Carbon::today()->toDateString());
+        $date = $request->query('date', Carbon::today()->toDateString());
         $status = $request->query('status', '');
 
-        $appointmentsQuery = \App\Models\Appointment::whereDate('date', $date);
+        $query = Appointment::with('patient')->whereDate('date', $date);
 
         if ($status) {
             switch ($status) {
                 case 'present':
-                    $appointmentsQuery->whereIn('status', ['queued', 'in_room', 'seen', 'present']);
+                    $query->whereIn('status', ['queued', 'in_room', 'seen', 'present']);
                     break;
                 case 'missed':
-                    $appointmentsQuery->where('status', 'missed');
+                    $query->where('status', 'missed');
                     break;
                 case 'scheduled':
-                    $appointmentsQuery->where('status', 'scheduled');
+                    $query->where('status', 'scheduled');
                     break;
             }
         }
 
-        $total = $appointmentsQuery->count();
+        // Get collection to perform calculations
+        $appointments = $query->get();
+        $total = $appointments->count();
 
-        if ($status) {
-            $present = ($status === 'present') ? $total : 0;
-            $notArrived = ($status === 'missed') ? $total : 0;
-        } else {
-            $present = \App\Models\Attendance::whereDate('date', $date)->where('is_present', true)->count();
-            if ($present === 0) {
-                $present = \App\Models\Appointment::whereDate('date', $date)
-                    ->whereIn('status', ['queued', 'in_room', 'seen', 'present'])
-                    ->count();
-            }
-            $notArrived = max(0, $total - $present);
-        }
+        // 1. KPI: Present / Missed
+        $present = $appointments->whereIn('status', ['queued', 'in_room', 'seen', 'present'])->count();
+        $notArrived = max(0, $total - $present);
 
-        return response()->json(['total' => $total, 'present' => $present, 'notArrived' => $notArrived]);
+        // 2. KPI: New vs Review
+        // "New" = Patient registered on the same day as the appointment
+        $newVisits = $appointments->filter(function($appt) use ($date) {
+            return $appt->patient && $appt->patient->created_at->isSameDay(Carbon::parse($date));
+        })->count();
+
+        $reviews = max(0, $total - $newVisits);
+
+        return response()->json([
+            'total'      => $total, 
+            'present'    => $present, 
+            'notArrived' => $notArrived,
+            'newVisits'  => $newVisits,
+            'reviews'    => $reviews
+        ]);
     }
 
-    // dashboard shows KPIs and quick link to daily queue
+    /**
+     * Main Dashboard View
+     */
     public function dashboard(Request $request)
     {
         $date = $request->query('date', Carbon::today()->toDateString());
 
-        // Appointments for the selected date (paged for the UI)
+        // 1. Fetch Appointments (All statuses, let JS filter the view)
         $appointmentsQuery = Appointment::with('patient')
             ->whereDate('date', $date)
             ->orderBy('time');
 
         $appointments = $appointmentsQuery->paginate(20);
 
-        // KPI: total appointments
-        $total = (int) $appointmentsQuery->count();
-
-        // Determine present using Attendance table (preferred), fallback to appointment.status
+        // 2. Calculate KPIs for Initial Load
+        $allAppts = Appointment::with('patient')->whereDate('date', $date)->get();
+        $total = $allAppts->count();
+        
+        // Present logic (Fallback to Appointment status if Attendance table empty)
         $present = Attendance::whereDate('date', $date)->where('is_present', true)->count();
-
-        // fallback: if attendance table empty, compute from appointment status where queued/in_room/seen
         if ($present === 0) {
-            $present = Appointment::whereDate('date', $date)
-                ->whereIn('status', ['queued', 'in_room', 'seen', 'present'])
-                ->count();
+            $present = $allAppts->whereIn('status', ['queued', 'in_room', 'seen', 'present'])->count();
         }
-
         $notArrived = max(0, $total - $present);
 
-        // compute simple percentage change vs yesterday (safe)
+        // New vs Review Logic
+        $newVisits = $allAppts->filter(function($appt) use ($date) {
+            return $appt->patient && $appt->patient->created_at->isSameDay(Carbon::parse($date));
+        })->count();
+        $reviews = max(0, $total - $newVisits);
+
+        // 3. Percentage Change (Visual Candy)
         $yesterday = Carbon::parse($date)->subDay()->toDateString();
         $yesterdayTotal = (int) Appointment::whereDate('date', $yesterday)->count();
 
         if ($yesterdayTotal === 0) {
-            // if yesterday had zero appointments:
-            if ($total === 0) {
-                $percentageChange = 0;
-                $changeDirection = ''; // no direction
-            } else {
-                // treat as +100% (or you can choose 'n/a')
-                $percentageChange = 100;
-                $changeDirection = '+';
-            }
+            $percentageChange = $total > 0 ? 100 : 0;
+            $changeDirection = $total > 0 ? '+' : '';
         } else {
             $diff = $total - $yesterdayTotal;
             $percentageChange = (int) round(($diff / $yesterdayTotal) * 100);
-            $changeDirection = $percentageChange === 0 ? '' : ($percentageChange > 0 ? '+' : '-');
+            $changeDirection = $percentageChange > 0 ? '+' : '-';
             $percentageChange = abs($percentageChange);
         }
 
-        // Call list: pending call logs (example: we treat logs with result == null or special flag)
+        // 4. Sidebar Data
         $callList = CallLog::with('patient')
             ->where(function($q){
                 $q->whereNull('result')->orWhere('result', 'no_answer');
@@ -109,23 +113,16 @@ class DashboardWebController extends Controller
             ->limit(12)
             ->get();
 
-        // Recent activities (replace with your activity/log model). Keep last 10.
         $recentActivities = UserActivityLog::with('user')
             ->latest()
             ->limit(10)
             ->get();
 
-        // Pass everything the view expects (including new changeDirection & percentageChange)
         return view('dashboard', compact(
-            'appointments',
-            'total',
-            'present',
-            'notArrived',
-            'callList',
-            'recentActivities',
-            'date',
-            'percentageChange',
-            'changeDirection'
+            'appointments', 'total', 'present', 'notArrived', 
+            'newVisits', 'reviews',
+            'callList', 'recentActivities', 'date', 
+            'percentageChange', 'changeDirection'
         ));
     }
 

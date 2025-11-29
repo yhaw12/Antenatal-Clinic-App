@@ -128,6 +128,9 @@ class ReportWebController extends Controller
     /**
      * Core Logic: Fetches Appointments, KPIs, Charts, and Call Stats.
      */
+    /**
+     * Core Logic: Fetches Appointments, KPIs, Charts, Call Stats, and Workload.
+     */
     private function getReportData(Carbon $from, Carbon $to, ?string $status): array
     {
         // 1. Identify Date Column
@@ -149,40 +152,42 @@ class ReportWebController extends Controller
             }
         }
 
-        // 4. Fetch Paginated List
+        // 4. Fetch Paginated List (for the table)
         $listQuery = clone $baseQuery;
-        $listQuery->with('patient')->orderBy($dateColumn, 'desc'); // Newest first
+        $listQuery->with('patient')->orderBy($dateColumn, 'desc');
         if (Schema::hasColumn('appointments', 'time')) {
             $listQuery->orderBy('time', 'desc');
         }
         $appts = $listQuery->paginate(25)->appends(request()->query());
 
-        // 5. Calculate Advanced KPIs
+        // 5. Calculate Standard KPIs
+        // We clone baseQuery to avoid mutating the original builder state
         $total = (clone $baseQuery)->count();
-        
-        // "Present" count logic (supports multiple status variations)
         $present = (clone $baseQuery)->whereIn('status', ['queued', 'in_room', 'seen', 'present'])->count();
-        
-        // "Missed" count
         $notArrived = (clone $baseQuery)->whereIn('status', ['missed', 'absent'])->count();
         
-        // Fallback math if status isn't perfectly updated yet
-        if ($present + $notArrived < $total && empty($status)) {
-             // If user hasn't filtered, assume remaining are scheduled/pending
-             // You can optionally calculate $notArrived = $total - $present; here if you prefer strict math
-        }
-
-        // Attendance Rate Calculation
         $attendanceRate = $total > 0 ? round(($present / $total) * 100, 1) : 0;
 
-        // 6. Call Effectiveness Stats (Doughnut Chart Data)
+        // 6. Calculate Workload (New vs Review)
+        // Logic: "New" = Patient registered on the same day as the appointment
+        // We fetch the collection here to filter in PHP (easier than complex SQL dates diffs)
+        $allInPeriod = (clone $baseQuery)->with('patient:id,created_at')->get();
+        
+        $newVisits = $allInPeriod->filter(function($appt) {
+            return $appt->patient && $appt->patient->created_at->isSameDay($appt->date);
+        })->count();
+
+        $reviews = max(0, $total - $newVisits);
+
+        // 7. Call Effectiveness Stats
+        // Group by result (no_answer, confirmed, etc)
         $callStats = CallLog::whereBetween('call_time', [$from->startOfDay(), $to->endOfDay()])
             ->select('result', DB::raw('count(*) as total'))
             ->groupBy('result')
             ->pluck('total', 'result')
             ->toArray();
 
-        // 7. Daily Trend Chart Data
+        // 8. Daily Trend Chart Data
         $chartQuery = clone $baseQuery;
         $dailyCounts = $chartQuery->select(
             DB::raw("DATE($dateColumn) as day"),
@@ -193,7 +198,7 @@ class ReportWebController extends Controller
         ->pluck('count', 'day')
         ->toArray();
 
-        // Fill gaps in the chart
+        // Fill gaps in the chart (ensure days with 0 appointments show up)
         $labels = [];
         $counts = [];
         $period = \Carbon\CarbonPeriod::create($from, $to);
@@ -210,10 +215,12 @@ class ReportWebController extends Controller
                 'total'      => $total,
                 'present'    => $present,
                 'notArrived' => $notArrived,
-                'rate'       => $attendanceRate // Passed to view
+                'rate'       => $attendanceRate,
+                'new'        => $newVisits, // New Metric
+                'review'     => $reviews    // New Metric
             ],
             'chart'     => ['labels' => $labels, 'counts' => $counts],
-            'callStats' => $callStats, // Passed to view
+            'callStats' => $callStats,
             'status'    => $status,
         ];
     }

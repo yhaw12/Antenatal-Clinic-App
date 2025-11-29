@@ -176,20 +176,25 @@
             <div class="card-hover glass-card rounded-xl sm:rounded-2xl p-2 sm:p-6 relative overflow-hidden" style="background:var(--surface); border:1px solid var(--border); box-shadow:var(--shadow);">
                 <div class="hidden sm:block absolute top-0 right-0 w-20 h-20 rounded-bl-2xl" style="background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 18%, transparent), color-mix(in srgb, var(--accent) 8%, transparent));"></div>
                 
-                <div class="relative flex flex-row sm:flex-col items-center sm:items-start gap-2 sm:gap-0 h-full">
-                    <div class="w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl flex-shrink-0 flex items-center justify-center transition-all" style="background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 70%, var(--brand)));">
+                <div class="relative flex flex-row sm:flex-col items-center sm:items-start gap-3 sm:gap-0 h-full">
+                    <div class="w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl flex-shrink-0 flex items-center justify-center transition-all mb-0 sm:mb-3" style="background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 70%, var(--brand)));">
                         <svg class="w-4 h-4 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
                         </svg>
                     </div>
                     
-                    <div class="flex flex-col justify-center sm:block w-full sm:w-auto overflow-hidden">
-                        <div class="hidden sm:flex items-center justify-between mb-2">
-                             <canvas id="miniChart" width="50" height="30"></canvas>
+                    <div class="flex items-center w-full gap-4">
+                        <div class="flex-1">
+                            <h3 class="text-lg sm:text-2xl font-bold leading-none" id="statNewVisits" style="color:var(--text)">{{ $newVisits ?? 0 }}</h3>
+                            <p class="text-[10px] sm:text-xs font-bold uppercase tracking-wider opacity-70" style="color:var(--muted)">New</p>
                         </div>
                         
-                        <h3 class="text-lg sm:text-3xl font-bold leading-none sm:leading-tight" style="color:var(--text)">{{ $total ? round(($present / $total) * 100) : 0 }}%</h3>
-                        <p class="text-[10px] sm:text-sm font-medium opacity-80 truncate" style="color:var(--muted)">Rate</p>
+                        <div class="w-px h-8 bg-gray-200 dark:bg-gray-700"></div>
+
+                        <div class="flex-1">
+                            <h3 class="text-lg sm:text-2xl font-bold leading-none" id="statReviews" style="color:var(--text)">{{ $reviews ?? 0 }}</h3>
+                            <p class="text-[10px] sm:text-xs font-bold uppercase tracking-wider opacity-70" style="color:var(--muted)">Review</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -437,107 +442,124 @@
 @push('scripts')
 <script>
 (() => {
-  /* ---------- Utilities ---------- */
+  /* ==========================================================================
+     UTILITIES & HELPERS
+     ========================================================================== */
   const $ = (sel, root = document) => (root || document).querySelector(sel);
   const $$ = (sel, root = document) => Array.from((root || document).querySelectorAll(sel));
   const metaCsrf = document.querySelector('meta[name="csrf-token"]');
   const CSRF = metaCsrf ? metaCsrf.getAttribute('content') : null;
 
+  /* --- Sophisticated Animation Helper --- */
+  function animateValue(obj, start, end, duration) {
+    if (!obj || start === end) return;
+    let startTimestamp = null;
+    const step = (timestamp) => {
+      if (!startTimestamp) startTimestamp = timestamp;
+      const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+      // Easing function for smoother feel (easeOutQuad)
+      const ease = 1 - (1 - progress) * (1 - progress); 
+      obj.innerHTML = Math.floor(ease * (end - start) + start);
+      if (progress < 1) {
+        window.requestAnimationFrame(step);
+      } else {
+        obj.innerHTML = end;
+      }
+    };
+    window.requestAnimationFrame(step);
+  }
+
+  /* --- Visual Flash Helper --- */
+  function flashCard(elementId, colorClass) {
+    const el = document.getElementById(elementId);
+    if(!el) return;
+    const card = el.closest('.glass-card');
+    if(!card) return;
+    
+    // Add a temporary glow/flash
+    card.style.transition = 'box-shadow 0.3s ease, border-color 0.3s ease';
+    const originalShadow = card.style.boxShadow;
+    const originalBorder = card.style.borderColor;
+    
+    if(colorClass.includes('green')) {
+        card.style.boxShadow = '0 0 15px rgba(16, 185, 129, 0.4)'; // Green glow
+        card.style.borderColor = 'rgba(16, 185, 129, 0.6)';
+    } else {
+        card.style.boxShadow = '0 0 15px rgba(239, 68, 68, 0.4)'; // Red glow
+        card.style.borderColor = 'rgba(239, 68, 68, 0.6)';
+    }
+
+    setTimeout(() => {
+        card.style.boxShadow = originalShadow;
+        card.style.borderColor = originalBorder;
+    }, 400);
+  }
+
   function ajaxPost(url, body = {}) {
     return fetch(url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(CSRF ? { 'X-CSRF-TOKEN': CSRF } : {})
-      },
+      headers: { 'Content-Type': 'application/json', ...(CSRF ? { 'X-CSRF-TOKEN': CSRF } : {}) },
       body: JSON.stringify(body)
-    }).then(async r => {
-      let j = null;
-      try { j = await r.json(); } catch(e){ }
-      return { ok: r.ok, status: r.status, body: j };
-    });
+    }).then(async r => ({ ok: r.ok, status: r.status, body: await r.json().catch(()=>({})) }));
   }
 
   function ajaxGet(url) {
     return fetch(url, {
       method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-        ...(CSRF ? { 'X-CSRF-TOKEN': CSRF } : {})
-      }
-    }).then(async r => {
-      let j = null;
-      try { j = await r.json(); } catch(e){ }
-      return { ok: r.ok, status: r.status, body: j };
-    });
+      headers: { 'Accept': 'application/json', ...(CSRF ? { 'X-CSRF-TOKEN': CSRF } : {}) }
+    }).then(async r => ({ ok: r.ok, status: r.status, body: await r.json().catch(()=>({})) }));
   }
 
-  /* ---------- Accessible Toasts ---------- */
   function showToast(message, type = 'info', timeout = 3500) {
     const container = document.getElementById('toastContainer');
     if (!container) return;
     const el = document.createElement('div');
-    el.className = 'px-4 py-2 rounded-xl shadow-md max-w-sm text-sm flex items-center justify-between space-x-3 transition-opacity';
-    el.style.transition = 'opacity 300ms';
+    el.className = 'px-4 py-2 rounded-xl shadow-md max-w-sm text-sm flex items-center justify-between space-x-3 transition-all duration-300 transform translate-y-2 opacity-0';
     el.setAttribute('role', 'status');
-    el.setAttribute('aria-live', type === 'error' ? 'assertive' : 'polite');
-    el.tabIndex = 0;
-    el.innerHTML = `<div class="flex-1">${message}</div><button aria-label="Dismiss toast" class="ml-3 text-xs">✕</button>`;
+    el.innerHTML = `<div class="flex-1 font-medium">${message}</div>`;
 
-    if (type === 'error') el.classList.add('bg-red-50','text-red-700');
-    else if (type === 'success') el.classList.add('bg-green-50','text-green-700');
+    if (type === 'error') el.classList.add('bg-red-500','text-white');
+    else if (type === 'success') el.classList.add('bg-emerald-500','text-white');
     else el.classList.add('bg-white','text-gray-800');
 
     container.appendChild(el);
-    const removeFn = () => { el.style.opacity = '0'; el.addEventListener('transitionend', () => el.remove()); };
-    const dismissBtn = el.querySelector('button');
-    let timer = setTimeout(removeFn, timeout);
-    el.addEventListener('click', (ev) => { if (ev.target === dismissBtn) { clearTimeout(timer); removeFn(); } });
-    el.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') { clearTimeout(timer); removeFn(); } });
+    requestAnimationFrame(() => { el.classList.remove('translate-y-2', 'opacity-0'); });
+    
+    setTimeout(() => {
+        el.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => el.remove(), 300);
+    }, timeout);
   }
 
-  /* ---------- Dashboard state ---------- */
+  /* ==========================================================================
+     DASHBOARD LOGIC
+     ========================================================================== */
   window.__DASHBOARD = window.__DASHBOARD || {};
   const state = window.__DASHBOARD;
+  if (!Array.isArray(state.appointments)) state.appointments = [];
 
-  if (!Array.isArray(state.appointments)) {
-    try {
-      state.appointments = state.appointments?.data || state.appointments || [];
-    } catch (e) {
-      state.appointments = [];
-    }
-  }
-
-  // Set initial current date display
+  // Initialize Dates
   const currentDateEl = $('#currentDate');
-  if (currentDateEl && state.currentDate) {
-    const dateObj = new Date(state.currentDate + 'T00:00:00');
-    currentDateEl.textContent = dateObj.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' }) + ' Schedule';
+  if (currentDateEl && state.currentDate) updateDateHeader(state.currentDate);
+
+  function updateDateHeader(dateStr) {
+      const dateObj = new Date(dateStr + 'T00:00:00');
+      if(currentDateEl) currentDateEl.textContent = dateObj.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' }) + ' Schedule';
   }
 
-  // Percentage Change
+  // Visual Percentage Update
   const percentageChangeEl = $('#percentageChange');
   if (percentageChangeEl && state.changeDirection && state.percentageChange !== undefined) {
     const directionClass = state.changeDirection === '+' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400';
     percentageChangeEl.className = `flex items-center text-xs ${directionClass}`;
     percentageChangeEl.innerHTML = `
-      <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
-      </svg>
+      <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>
       ${state.changeDirection}${state.percentageChange}% from yesterday
     `;
   }
 
-  /* ---------- Helpers ---------- */
-  function getIntFromEl(el) {
-    if (!el) return 0;
-    const v = parseInt(el.textContent.trim().replace(/[^\d-]/g, ''), 10);
-    return Number.isFinite(v) ? v : 0;
-  }
-  function setIntToEl(el, n) {
-    if (!el) return;
-    el.textContent = String(n);
-  }
+  function getIntFromEl(el) { return el ? (parseInt(el.textContent.replace(/[^\d]/g, ''), 10) || 0) : 0; }
+  function setIntToEl(el, n) { if (el) el.textContent = String(n); }
 
   function updateMiniChart(present, total) {
     const c = document.getElementById('miniChart');
@@ -548,28 +570,25 @@
     const pct = total ? Math.round((present / total) * 100) : 0;
     ctx.fillStyle = 'rgba(0,0,0,0.05)'; ctx.fillRect(0,0,w,h);
     ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.fillRect(0, Math.round(h*0.25), Math.round(w * (pct/100)), Math.round(h*0.5));
-
-    const progressContainer = document.querySelector('[data-progress]');
-    if (progressContainer) {
-      const fill = progressContainer.querySelector('[data-progress-fill]');
-      if (fill) {
-        fill.style.width = `${pct}%`;
-        progressContainer.setAttribute('aria-valuenow', String(pct));
-      }
-    }
+    
+    // Animate the text percentage
     const rateEl = c.closest('.glass-card')?.querySelector('h3');
-    if (rateEl) rateEl.textContent = `${pct}%`;
+    if (rateEl) {
+        const currentRate = parseInt(rateEl.textContent) || 0;
+        animateValue(rateEl, currentRate, pct, 800);
+        setTimeout(() => rateEl.textContent = pct + '%', 810);
+    }
   }
 
-  /* ---------- Queue rendering (MAX visible) ---------- */
-  const VISIBLE_LIMIT = 5;
+  /* ==========================================================================
+     QUEUE RENDERING (THE CORE LIST)
+     ========================================================================== */
+  const VISIBLE_LIMIT = 200;
   const queueList = $('#queueList');
 
   function escapeHtml(s) {
     if (!s && s !== 0) return '';
-    return String(s)
-      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-      .replace(/"/g,'&quot;').replace(/'/g,"&#039;");
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,"&#039;");
   }
 
   function makeQueueItem(appt) {
@@ -577,7 +596,6 @@
     const fname = appt.patient?.first_name ?? appt.first_name ?? 'Unknown';
     const lname = appt.patient?.last_name ?? appt.last_name ?? '';
     const phone = appt.patient?.phone ?? '';
-    const address = appt.patient?.address ?? '';
     const initials = ((fname[0]||'') + (lname[0]||'')).toUpperCase() || 'P';
     const status = (appt.status || 'scheduled').toLowerCase();
     
@@ -586,44 +604,35 @@
       try {
         const t = appt.time.length <= 8 ? `1970-01-01T${appt.time}` : appt.time;
         time = new Date(t).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
-      } catch (e) {
-        time = appt.time;
-      }
-    } else if (appt.time === '-') time = '-';
+      } catch (e) { time = appt.time; }
+    }
 
-    const badgeHtml = status === 'present'
-      ? `<span class="w-2 h-2 bg-emerald-400 rounded-full mr-1"></span> Present`
-      : status === 'missed'
-        ? `<span class="w-2 h-2 bg-red-400 rounded-full mr-1"></span> Missed`
-        : `<span class="w-2 h-2 bg-blue-400 rounded-full mr-1"></span> Scheduled`;
-
-    // Only show buttons if NOT in future mode
     let actionButtons = '';
     if (!state.isFuture) {
         actionButtons = `
-            <button class="mark-present px-3 py-1.5 bg-emerald-500 text-white rounded-lg text-sm" data-appt-id="${appt.id}">Mark Present</button>
-            <button class="mark-absent px-3 py-1.5 bg-red-500 text-white rounded-lg text-sm" data-appt-id="${appt.id}">Mark Absent</button>
+            <button class="mark-present px-3 py-1.5 bg-emerald-500 text-white rounded-lg text-sm transition-transform active:scale-95 shadow-sm hover:shadow-md" data-appt-id="${appt.id}">Mark Present</button>
+            <button class="mark-absent px-3 py-1.5 bg-red-500 text-white rounded-lg text-sm transition-transform active:scale-95 shadow-sm hover:shadow-md" data-appt-id="${appt.id}">Mark Absent</button>
         `;
     }
 
     return `
-      <div class="queue-item flex items-center justify-between py-3" data-appointment-id="${appt.id}" data-status="${status}" tabindex="0">
+      <div class="queue-item flex items-center justify-between py-3 transition-all hover:bg-black/5 rounded-lg px-2 -mx-2 animate-fade-in" 
+           data-appointment-id="${appt.id}" 
+           data-status="${status}">
         <div class="flex items-center space-x-3">
-          <input type="checkbox" class="queue-checkbox" data-id="${appt.id}">
-          <div class="w-12 h-12 rounded-full flex items-center justify-center text-white font-semibold" style="background:linear-gradient(135deg,#60a5fa 0%,#6366f1 100%)">${initials}</div>
+          <input type="checkbox" class="queue-checkbox form-checkbox h-5 w-5 text-blue-600 rounded focus:ring-blue-500" data-id="${appt.id}">
+          <div class="w-12 h-12 rounded-full flex items-center justify-center text-white font-semibold flex-shrink-0 shadow-md" 
+               style="background:linear-gradient(135deg,#60a5fa 0%,#6366f1 100%)">${initials}</div>
           <div>
-            <div class="font-medium">${escapeHtml(fname)} ${escapeHtml(lname)}</div>
-            <div class="text-xs text-gray-500">${escapeHtml(phone || '—')} • ${escapeHtml(address || '—')}</div>
+            <div class="font-medium text-gray-900 dark:text-gray-100">${escapeHtml(fname)} ${escapeHtml(lname)}</div>
+            <div class="text-xs text-gray-500">${escapeHtml(phone || '—')}</div>
           </div>
         </div>
-
         <div class="text-right space-y-2">
-          <div class="text-sm text-gray-500">${escapeHtml(time)}</div>
-          <div><span class="inline-flex status-badge items-center px-2 py-0.5 rounded-full text-xs font-medium ${status}">${badgeHtml}</span></div>
-
+          <div class="text-sm font-mono text-gray-500">${escapeHtml(time)}</div>
           <div class="mt-2 flex items-center justify-end space-x-2">
             ${actionButtons}
-            <a href="/patients/${pid}" class="px-3 py-1.5 border rounded-lg text-sm">View</a>
+            <a href="/patients/${pid}" class="px-3 py-1.5 border rounded-lg text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">View</a>
           </div>
         </div>
       </div>
@@ -631,177 +640,146 @@
   }
 
   function renderQueueFromState() {
-    const list = Array.isArray(state.appointments) ? state.appointments.slice(0, VISIBLE_LIMIT) : [];
+    // === CRITICAL FIX: The Filter ===
+    // This ensures that items marked present/missed NEVER show up in this list,
+    // even if the server sent them on page load.
+    const activeItems = (state.appointments || []).filter(a => 
+        ['scheduled', 'queued'].includes(a.status || 'scheduled')
+    );
+
+    const list = activeItems.slice(0, VISIBLE_LIMIT);
+    
     if (!queueList) return;
-    if (!list || list.length === 0) {
-      queueList.innerHTML = `<div class="p-4 text-sm text-gray-500">No appointments found</div>`;
+    if (list.length === 0) {
+      queueList.innerHTML = `
+        <div class="p-12 text-center flex flex-col items-center animate-fade-in">
+            <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900">All Caught Up!</h3>
+            <p class="text-gray-500 mt-1">No pending appointments for today.</p>
+        </div>`;
       return;
     }
     queueList.innerHTML = list.map(makeQueueItem).join('');
   }
 
-  // initial render
+  // Initial Render
   renderQueueFromState();
   updateMiniChart(state.present, state.total);
 
-  /* ---------- selection & bulk actions ---------- */
-  const selectAll = $('#selectAll');
-  const bulkActions = $('#bulkActions');
-  const selectionCountEl = $('#selectionCount');
-
-  function setBulkVisible(visible) {
-    if (!bulkActions) return;
-    bulkActions.style.opacity = visible ? '1' : '0';
-    bulkActions.setAttribute('aria-hidden', visible ? 'false' : 'true');
-  }
-
-  function updateSelectionCount() {
-    const checked = $$('.queue-checkbox', queueList).filter(c => c.checked).length;
-    if (selectionCountEl) selectionCountEl.textContent = `${checked} selected`;
-    setBulkVisible(checked > 0);
-  }
-
-  if (queueList) {
-    queueList.addEventListener('change', e => {
-      if (e.target && e.target.classList.contains('queue-checkbox')) updateSelectionCount();
-    });
-  }
-  if (selectAll) {
-    selectAll.addEventListener('change', (e) => {
-      const checked = e.target.checked;
-      $$('.queue-checkbox', queueList).forEach(cb => cb.checked = checked);
-      updateSelectionCount();
-    });
-  }
-
-  /* ---------- button loading helpers ---------- */
-  function setButtonsLoading(ids = [], isLoading = true) {
-    ids.forEach(id => {
-      const dom = document.querySelector(`[data-appointment-id="${id}"]`);
-      if (!dom) return;
-      dom.querySelectorAll('button').forEach(btn => {
-        if (isLoading) {
-          if (!btn.dataset._orig) btn.dataset._orig = btn.innerHTML;
-          btn.disabled = true;
-          btn.classList.add('opacity-70','cursor-not-allowed');
-          btn.innerHTML = `<span class="inline-block animate-spin w-4 h-4 border-b-2 rounded-full mr-2"></span> ${btn.innerText.trim()}`;
-        } else {
-          btn.disabled = false;
-          btn.classList.remove('opacity-70','cursor-not-allowed');
-          if (btn.dataset._orig) { btn.innerHTML = btn.dataset._orig; delete btn.dataset._orig; }
-        }
-      });
-    });
-  }
-
-  /* ---------- handleMark ---------- */
+  /* ==========================================================================
+     ACTION HANDLER (Mark Present/Absent)
+     ========================================================================== */
   async function handleMark(ids, endpoint, successMessage) {
-    if (!Array.isArray(ids) || ids.length === 0) return showToast('No appointments selected', 'error');
+    if (!Array.isArray(ids) || ids.length === 0) return;
 
-    const prevStates = ids.map(id => {
-      const domItem = queueList.querySelector(`[data-appointment-id="${id}"]`);
-      if (domItem) return domItem.dataset.status || 'scheduled';
-      const ap = (state.appointments || []).find(a => Number(a.id) === Number(id));
-      return ap ? (ap.status || 'scheduled') : 'scheduled';
+    // 1. Optimistic UI Update: Animate removal immediately
+    ids.forEach(id => {
+        const dom = document.querySelector(`[data-appointment-id="${id}"]`);
+        if(dom) {
+            dom.style.transition = "all 0.3s ease";
+            dom.style.opacity = "0";
+            dom.style.transform = "translateX(20px)";
+        }
     });
-
-    setButtonsLoading(ids, true);
 
     try {
       const payload = { appointment_ids: ids };
       const res = await ajaxPost(endpoint, payload);
 
       if (!res.ok) {
-        showToast(res.body?.message || 'Action failed', 'error');
+        renderQueueFromState(); // Revert visual changes if failed
+        alert('Action failed. Please check connection.');
         return;
       }
 
-      // PERMANENTLY update in-memory state and DOM
-      ids.forEach((id, idx) => {
-        const prev = prevStates[idx] || 'scheduled';
-        const idxInState = (state.appointments || []).findIndex(a => Number(a.id) === Number(id));
-        if (endpoint.includes('mark-present')) {
-          if (idxInState !== -1) state.appointments.splice(idxInState, 1);
-        } else {
-          if (idxInState !== -1) {
-            state.appointments[idxInState].status = 'missed';
-          }
+      // 2. Update Local State (Remove processed items)
+      ids.forEach(id => {
+        const idx = (state.appointments || []).findIndex(a => Number(a.id) === Number(id));
+        if (idx !== -1) {
+            // Update status so filter removes it permanently
+            const newStatus = endpoint.includes('mark-present') ? 'present' : 'missed';
+            state.appointments[idx].status = newStatus;
         }
       });
 
-      // Recompute counters
-      const totalEl = $('#totalAppointments'), presentEl = $('#patientsPresent'), missedEl = $('#missedAppointments');
-      let totalVal = state._meta && state._meta.total !== undefined ? Number(state._meta.total) : (getIntFromEl(totalEl) || 0);
-      if (res.body && typeof res.body.total === 'number') totalVal = res.body.total;
+      // 3. Sophisticated Stats Update
+      const presentEl = document.getElementById('patientsPresent');
+      const missedEl = document.getElementById('missedAppointments');
+      const newVisitsEl = document.getElementById('statNewVisits');
+      const reviewsEl = document.getElementById('statReviews');
+      
+      const oldPresent = getIntFromEl(presentEl);
+      const oldMissed = getIntFromEl(missedEl);
 
-      let presentVal = getIntFromEl(presentEl);
-      let missedVal = getIntFromEl(missedEl);
+      let newPresent = oldPresent;
+      let newMissed = oldMissed;
 
-      ids.forEach((id, idx) => {
-        const prev = prevStates[idx] || 'scheduled';
-        if (endpoint.includes('mark-present')) {
-          if (prev !== 'present') presentVal = presentVal + 1;
-          if (prev === 'missed' || prev === 'absent') missedVal = Math.max(0, missedVal - 1);
-        } else {
-          if (prev === 'present') { presentVal = Math.max(0, presentVal - 1); missedVal = missedVal + 1; }
-          else if (prev !== 'missed' && prev !== 'absent') missedVal = missedVal + 1;
-        }
-      });
+      // Use server numbers if reliable
+      if (res.body && typeof res.body.present === 'number') {
+         newPresent = res.body.present;
+         newMissed = res.body.notArrived;
+         
+         // Update new cards if server sent them
+         if(res.body.newVisits !== undefined) animateValue(newVisitsEl, getIntFromEl(newVisitsEl), res.body.newVisits, 800);
+         if(res.body.reviews !== undefined) animateValue(reviewsEl, getIntFromEl(reviewsEl), res.body.reviews, 800);
+         
+      } else {
+         // Fallback local calculation
+         const isPresentAction = endpoint.includes('mark-present');
+         newPresent = isPresentAction ? oldPresent + ids.length : oldPresent;
+         newMissed = Math.max(0, oldMissed - ids.length);
+      }
 
-      state.present = presentVal;
-      state.notArrived = missedVal;
-      if (!state._meta) state._meta = {};
-      state._meta.total = totalVal;
+      // 4. Trigger Animations
+      if (newPresent !== oldPresent) {
+          animateValue(presentEl, oldPresent, newPresent, 600);
+          flashCard('patientsPresent', 'bg-green-50');
+      }
+      if (newMissed !== oldMissed) {
+          animateValue(missedEl, oldMissed, newMissed, 600);
+      }
 
-      if (presentEl) presentEl.textContent = String(presentVal);
-      if (missedEl) missedEl.textContent = String(missedVal);
-      if (totalEl) totalEl.textContent = String(totalVal);
-      updateMiniChart(presentVal, totalVal);
+      updateMiniChart(newPresent, state.total);
 
-      // Re-render visible queue
-      renderQueueFromState();
-
-      // Reset selection UI
-      $$('.queue-checkbox', queueList).forEach(cb => cb.checked = false);
-      if (selectAll) selectAll.checked = false;
-      updateSelectionCount();
+      // 5. Hard Re-render list after delay to clean up DOM
+      setTimeout(() => {
+          renderQueueFromState();
+          // Clear selections
+          const selectAll = $('#selectAll');
+          if(selectAll) selectAll.checked = false;
+          $$('.queue-checkbox').forEach(cb => cb.checked = false);
+          $('#selectionCount').textContent = '0 selected';
+          $('#bulkActions').style.opacity = '0';
+          $('#bulkActions').style.pointerEvents = 'none';
+      }, 350);
 
       showToast(successMessage, 'success');
 
-      if (res.body && typeof res.body.present === 'number') {
-        state.present = res.body.present;
-        state.notArrived = res.body.notArrived ?? state.notArrived;
-        state._meta.total = res.body.total ?? state._meta.total;
-        if (presentEl) presentEl.textContent = String(state.present);
-        if (missedEl) missedEl.textContent = String(state.notArrived);
-        if (totalEl) totalEl.textContent = String(state._meta.total);
-        updateMiniChart(Number(state.present), Number(state._meta.total));
-      }
-
     } catch (err) {
       console.error(err);
-      showToast('Network error', 'error');
-    } finally {
-      setButtonsLoading(ids, false);
+      renderQueueFromState();
     }
   }
 
-  // delegated click handlers
+  // Delegated Clicks
   document.addEventListener('click', (e) => {
-    const presentBtn = e.target.closest && e.target.closest('.mark-present');
+    const presentBtn = e.target.closest('.mark-present');
     if (presentBtn) {
       const id = presentBtn.dataset.apptId;
-      if (id) handleMark([parseInt(id,10)], '/daily-queue/mark-present', 'Marked present');
+      handleMark([parseInt(id,10)], '/daily-queue/mark-present', 'Marked present');
     }
-    const absentBtn = e.target.closest && e.target.closest('.mark-absent');
+    const absentBtn = e.target.closest('.mark-absent');
     if (absentBtn) {
       const id = absentBtn.dataset.apptId;
-      if (id) handleMark([parseInt(id,10)], '/daily-queue/mark-absent', 'Marked absent');
+      handleMark([parseInt(id,10)], '/daily-queue/mark-absent', 'Marked absent');
     }
   });
 
   const bulkMarkPresent = $('#bulkMarkPresent');
   const bulkMarkAbsent = $('#bulkMarkAbsent');
+  
   if (bulkMarkPresent) {
     bulkMarkPresent.addEventListener('click', () => {
       const ids = $$('.queue-checkbox', queueList).filter(c=>c.checked).map(c => parseInt(c.dataset.id,10));
@@ -815,10 +793,11 @@
     });
   }
 
-  /* ---------- Dynamic Date Filter & Tomorrow Logic (UPDATED) ---------- */
+  /* ==========================================================================
+     DATE & SEARCH LOGIC
+     ========================================================================== */
   const dateFilter = $('#dateFilter');
   const statusFilter = $('#statusFilter');
-  const dashboardUrl = '{{ route("dashboard") }}';
   
   const queueTitle = $('#queueTitle');
   const queueSubtitle = $('#queueSubtitle');
@@ -827,85 +806,93 @@
   function getDateDiff(dateString) {
       const today = new Date();
       today.setHours(0,0,0,0);
-      
       const target = new Date(dateString + 'T00:00:00');
       target.setHours(0,0,0,0);
-      
-      const diffTime = target - today;
-      return Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+      return Math.ceil((target - today) / (1000 * 60 * 60 * 24)); 
   }
 
   async function loadDataForDate(newDate, status = '') {
-    showToast('Loading data...', 'info');
+    showToast('Updating schedule...', 'info');
+
+    const newUrl = new URL(window.location);
+    newUrl.searchParams.set('date', newDate);
+    if(status) newUrl.searchParams.set('status', status);
+    else newUrl.searchParams.delete('status');
+    window.history.pushState({path: newUrl.href}, '', newUrl.href);
 
     const diff = getDateDiff(newDate);
-    state.isFuture = diff > 0; // Update state boolean
+    state.isFuture = diff > 0;
     
-    // UPDATE GUARDRAILS UI based on date
+    // UI Mode Update
     if (state.isFuture) {
-        // FUTURE MODE
         if(queueTitle) queueTitle.textContent = "Tomorrow's Schedule";
         if(queueSubtitle) queueSubtitle.textContent = "Call List Mode • Preparing for upcoming appointments";
         if(futureBanner) futureBanner.classList.remove('hidden');
         if(currentDateEl) currentDateEl.style.color = "var(--accent)";
-        if(bulkActions) bulkActions.classList.add('hidden'); // Also hide bulk actions in future mode
-    } else if (diff < 0) {
-        // PAST MODE
-        if(queueTitle) queueTitle.textContent = "Past Archive";
-        if(queueSubtitle) queueSubtitle.textContent = "Historical view • Read only";
-        if(futureBanner) futureBanner.classList.add('hidden');
-        if(currentDateEl) currentDateEl.style.color = "var(--muted)";
-        if(bulkActions) bulkActions.classList.remove('hidden');
     } else {
-        // TODAY MODE (Reset)
         if(queueTitle) queueTitle.textContent = "Today's Queue";
         if(queueSubtitle) queueSubtitle.textContent = "Quick controls for marking attendance";
         if(futureBanner) futureBanner.classList.add('hidden');
         if(currentDateEl) currentDateEl.style.color = "var(--muted)";
-        if(bulkActions) bulkActions.classList.remove('hidden');
     }
 
     if(dateFilter) dateFilter.value = newDate;
+    updateDateHeader(newDate);
 
     try {
-      const statsUrl = `/dashboard/stats?date=${newDate}${status ? '&status=' + status : ''}`;
-      const statsRes = await ajaxGet(statsUrl);
+      const [statsRes, apptsRes] = await Promise.all([
+        ajaxGet(`/dashboard/stats?date=${newDate}${status ? '&status=' + status : ''}`),
+        ajaxGet(`/dashboard/appointments?date=${newDate}${status ? '&status=' + status : ''}`)
+      ]);
+
       if (statsRes.ok && statsRes.body) {
+        const oldTotal = state.total || 0;
+        const oldPresent = state.present || 0;
+        const oldMissed = state.notArrived || 0;
+        const oldNew = state.newVisits || 0;
+        const oldRev = state.reviews || 0;
+
         state.total = statsRes.body.total || 0;
         state.present = statsRes.body.present || 0;
         state.notArrived = statsRes.body.notArrived || 0;
-        state._meta = { ...state._meta, total: state.total };
+        state.newVisits = statsRes.body.newVisits || 0;
+        state.reviews = statsRes.body.reviews || 0;
+        
+        // Animate stats change
+        const totalEl = $('#totalAppointments');
+        const presentEl = $('#patientsPresent');
+        const missedEl = $('#missedAppointments');
+        const newVisitsEl = document.getElementById('statNewVisits');
+        const reviewsEl = document.getElementById('statReviews');
 
-        setIntToEl($('#totalAppointments'), state.total);
-        setIntToEl($('#patientsPresent'), state.present);
-        setIntToEl($('#missedAppointments'), state.notArrived);
+        if(totalEl) animateValue(totalEl, oldTotal, state.total, 800);
+        if(presentEl) animateValue(presentEl, oldPresent, state.present, 800);
+        if(missedEl) animateValue(missedEl, oldMissed, state.notArrived, 800);
+        if(newVisitsEl) animateValue(newVisitsEl, oldNew, state.newVisits, 800);
+        if(reviewsEl) animateValue(reviewsEl, oldRev, state.reviews, 800);
+        
         updateMiniChart(state.present, state.total);
       }
 
-      const apptsUrl = `/dashboard/appointments?date=${newDate}${status ? '&status=' + status : ''}`;
-      const apptsRes = await ajaxGet(apptsUrl);
       if (apptsRes.ok && Array.isArray(apptsRes.body)) {
         state.appointments = apptsRes.body;
-        renderQueueFromState(); // This will now check state.isFuture and hide buttons
-      } else {
-        window.location.href = `${dashboardUrl}?date=${newDate}${status ? '&status=' + status : ''}`;
-        return;
+        renderQueueFromState();
+        
+        // Clear selections
+        const selectAll = $('#selectAll');
+        if(selectAll) selectAll.checked = false;
+        $$('.queue-checkbox').forEach(cb => cb.checked = false);
+        $('#selectionCount').textContent = '0 selected';
+        $('#bulkActions').style.opacity = '0';
+        $('#bulkActions').style.pointerEvents = 'none';
       }
 
-      if (currentDateEl) {
-        const dateObj = new Date(newDate + 'T00:00:00');
-        currentDateEl.textContent = dateObj.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' }) + ' Schedule';
-      }
-
-      showToast('Data updated', 'success');
     } catch (err) {
       console.error(err);
-      showToast('Failed to load data. Reloading page...', 'error');
-      window.location.href = `${dashboardUrl}?date=${newDate}${status ? '&status=' + status : ''}`;
+      showToast('Failed to load data', 'error');
     }
   }
 
-  // EVENT LISTENERS
   if (dateFilter) {
     dateFilter.addEventListener('change', (e) => {
       const newDate = e.target.value;
@@ -916,8 +903,7 @@
 
   if (statusFilter) {
     statusFilter.addEventListener('change', (e) => {
-      const status = e.target.value;
-      loadDataForDate(dateFilter.value, status);
+      loadDataForDate(dateFilter.value, e.target.value);
     });
   }
 
@@ -926,188 +912,98 @@
       tomorrowBtn.addEventListener('click', () => {
           const tomorrow = new Date();
           tomorrow.setDate(tomorrow.getDate() + 1);
-          // Format YYYY-MM-DD
           const yyyy = tomorrow.getFullYear();
           const mm = String(tomorrow.getMonth() + 1).padStart(2, '0');
           const dd = String(tomorrow.getDate()).padStart(2, '0');
-          const tomorrowStr = `${yyyy}-${mm}-${dd}`;
-          
-          loadDataForDate(tomorrowStr, '');
+          loadDataForDate(`${yyyy}-${mm}-${dd}`, '');
       });
   }
 
-  const themeToggle = $('#themeToggle');
-  if (themeToggle) {
-    themeToggle.addEventListener('click', () => {
-      const html = document.documentElement;
-      const currentIsDark = html.classList.contains('dark');
-      html.classList.toggle('dark', !currentIsDark);
-      localStorage.setItem('theme', !currentIsDark ? 'dark' : 'light');
+  // Selection Logic
+  const selectAll = $('#selectAll');
+  const selectionCountEl = $('#selectionCount');
+  
+  if (queueList) {
+    queueList.addEventListener('change', e => {
+      if (e.target.classList.contains('queue-checkbox')) updateSelectionCount();
+    });
+  }
+  if (selectAll) {
+    selectAll.addEventListener('change', e => {
+      $$('.queue-checkbox', queueList).forEach(cb => cb.checked = e.target.checked);
+      updateSelectionCount();
     });
   }
 
-  /* ---------- Search ---------- */
-  (function attachSearch() {
-    const searchInput = document.getElementById('globalSearch');
-    const resultsBox = document.getElementById('searchResults');
-    const dateFilterEl = document.getElementById('dateFilter');
-    if (!searchInput || !resultsBox) return;
-
-    const searchUrl = '/dashboard/search';
-    let timer = null;
-    let activeIndex = -1;
-    let currentItems = [];
-
-    function escapeHtmlLocal(s) {
-      if (!s && s !== 0) return '';
-      return String(s)
-        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-        .replace(/"/g,'&quot;').replace(/'/g,"&#039;");
-    }
-
-    function renderResults(items) {
-    currentItems = items || [];
-    activeIndex = -1;
-    resultsBox.setAttribute('role', 'listbox');
-    resultsBox.setAttribute('aria-label', 'Search results');
-      if (!items || !items.length) {
-        resultsBox.innerHTML = `<div class="p-4 text-sm text-muted">No results found</div>`;
-        return;
+  function updateSelectionCount() {
+      const checked = $$('.queue-checkbox:checked', queueList).length;
+      if (selectionCountEl) selectionCountEl.textContent = `${checked} selected`;
+      const bulkActions = $('#bulkActions');
+      if(bulkActions) {
+          bulkActions.style.opacity = checked > 0 ? '1' : '0';
+          bulkActions.style.pointerEvents = checked > 0 ? 'auto' : 'none';
       }
-
-      resultsBox.innerHTML = `
-        <div class="divide-y divide-border text-sm">
-          ${items.map((item, idx) => {
-            const name = (item.first_name || item.last_name)
-              ? `${item.first_name || ''} ${item.last_name || ''}`.trim()
-              : (item.label || 'Unknown Patient');
-
-            const href = item.id ? `/patients/${item.id}` : '#';
-            const phoneInfo = item.phone
-              ? `<span class="flex items-center text-xs text-muted">${escapeHtmlLocal(item.phone)}</span>`
-              : '';
-
-            return `
-              <a href="${href}"
-                role="option"
-                id="search-option-${idx}"
-                data-index="${idx}"
-                class="block p-4 active-result:bg-surface/80 transition-colors outline-none"
-                tabindex="-1">
-                <div class="flex items-start justify-between">
-                  <div class="flex-1 min-w-0">
-                    <div class="flex items-center space-x-2">
-                      <div class="font-medium text-text truncate">
-                        ${escapeHtmlLocal(name)}
-                      </div>
-                    </div>
-                    ${phoneInfo ? `<div class="mt-1">${phoneInfo}</div>` : ''}
-                  </div>
-                </div>
-              </a>
-            `;
-          }).join('')}
-        </div>`;
-      }
-
-    function focusResult(idx) {
-      const option = resultsBox.querySelector(`#search-option-${idx}`);
-      if (!option) return;
-      $$('.active-result', resultsBox).forEach(el => el.classList.remove('active-result'));
-      option.classList.add('active-result');
-      option.focus();
-      resultsBox.setAttribute('aria-activedescendant', option.id);
-      activeIndex = idx;
-    }
-
-    searchInput.addEventListener('input', (ev) => {
-      const q = String(ev.target.value || '').trim();
-      clearTimeout(timer);
-      if (!q || q.length < 2) { resultsBox.classList.add('hidden'); return; }
-      resultsBox.classList.remove('hidden');
-      resultsBox.innerHTML = `<div class="p-4 flex items-center justify-center"><div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div><span class="ml-2 text-sm text-gray-600 dark:text-gray-300">Searching...</span></div>`;
-
-      timer = setTimeout(async () => {
-        try {
-          const dateParam = dateFilterEl && dateFilterEl.value ? `&date=${encodeURIComponent(dateFilterEl.value)}` : '';
-          const url = `${searchUrl}?term=${encodeURIComponent(q)}${dateParam}`;
-          const res = await fetch(url, { headers: { 'Accept': 'application/json','X-Requested-With': 'XMLHttpRequest' }});
-          if (!res.ok) { resultsBox.innerHTML = `<div class="p-4 text-sm text-red-600">Search failed. Please try again.</div>`; return; }
-          const json = await res.json();
-          renderResults(Array.isArray(json) ? json : []);
-        } catch (err) {
-          console.error('Search error:', err);
-          resultsBox.innerHTML = `<div class="p-4 text-sm text-red-600">Network error. Please check your connection.</div>`;
-        }
-      }, 300);
-    });
-
-    searchInput.addEventListener('keydown', (e) => {
-      if (resultsBox.classList.contains('hidden')) return;
-      const len = currentItems.length;
-      if (e.key === 'ArrowDown') { e.preventDefault(); focusResult(Math.min(len-1, (activeIndex === -1 ? 0 : activeIndex + 1))); }
-      else if (e.key === 'ArrowUp') { e.preventDefault(); focusResult(Math.max(0, (activeIndex === -1 ? 0 : activeIndex - 1))); }
-      else if (e.key === 'Enter') {
-        if (activeIndex >= 0) {
-          const link = resultsBox.querySelector(`#search-option-${activeIndex}`);
-          if (link) { window.location.href = link.getAttribute('href'); }
-        }
-      } else if (e.key === 'Escape') {
-        resultsBox.classList.add('hidden'); searchInput.blur();
-      }
-    });
-
-    resultsBox.addEventListener('click', (ev) => {
-      const anchor = ev.target.closest('a[role="option"]');
-      if (anchor) resultsBox.classList.add('hidden');
-    });
-
-    document.addEventListener('click', (ev) => {
-      if (!ev.target.closest('#searchResults') && !ev.target.closest('#globalSearch')) {
-        resultsBox.classList.add('hidden');
-      }
-    });
-  })();
-
-  /* ---------- FAB ---------- */
-  const fabButton = document.getElementById('fabButton');
-  const fabMenu = document.getElementById('fabMenu');
-  if (fabButton && fabMenu) {
-    fabButton.setAttribute('aria-expanded', 'false');
-    fabMenu.classList.add('pointer-events-none','opacity-0','scale-95');
-
-    fabButton.addEventListener('click', () => {
-      const isOpen = fabMenu.classList.contains('pointer-events-auto');
-      fabMenu.classList.toggle('pointer-events-none', isOpen);
-      fabMenu.classList.toggle('pointer-events-auto', !isOpen);
-      fabMenu.classList.toggle('opacity-100', !isOpen);
-      fabMenu.classList.toggle('opacity-0', isOpen);
-      fabMenu.classList.toggle('scale-100', !isOpen);
-      fabMenu.classList.toggle('scale-95', isOpen);
-      fabButton.setAttribute('aria-expanded', String(!isOpen));
-    });
-
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        fabMenu.classList.add('opacity-0','pointer-events-none','scale-95');
-        fabButton.setAttribute('aria-expanded','false');
-      }
-    });
-    document.addEventListener('click', (e) => {
-      if (!e.target.closest('#fabButton') && !e.target.closest('#fabMenu')) {
-        fabMenu.classList.add('opacity-0','pointer-events-none','scale-95');
-        fabButton.setAttribute('aria-expanded','false');
-      }
-    });
   }
 
-  document.addEventListener('keydown', (e) => {
-    if (e.key === '/' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
-      e.preventDefault();
-      const s = document.getElementById('globalSearch');
-      if (s) { s.focus(); s.select(); }
-    }
+  /* ---------- Modals ---------- */
+  window.closeModal = (id) => {
+    const m = document.getElementById(id);
+    if(m) m.classList.add('hidden');
+  };
+
+  document.addEventListener('click', (e) => {
+      if(e.target.closest('[data-action="call-now"]')) {
+          const btn = e.target.closest('[data-action="call-now"]');
+          const name = btn.dataset.name;
+          $('#callPatientName').textContent = name;
+          $('#callPatientNameBody').textContent = name;
+          const modal = document.getElementById('callModal');
+          if(modal) {
+              modal.classList.remove('hidden');
+              const select = modal.querySelector('select[name="result"]');
+              if(select) setTimeout(() => select.focus(), 100);
+          }
+      }
   });
+
+  /* ---------- Search (Basic) ---------- */
+  const searchInput = $('#globalSearch');
+  const resultsBox = $('#searchResults');
+  let searchTimer = null;
+
+  if (searchInput && resultsBox) {
+      searchInput.addEventListener('input', (e) => {
+          const q = e.target.value.trim();
+          clearTimeout(searchTimer);
+          if (q.length < 2) { resultsBox.classList.add('hidden'); return; }
+          
+          resultsBox.classList.remove('hidden');
+          resultsBox.innerHTML = `<div class="p-4 text-center text-gray-500">Searching...</div>`;
+
+          searchTimer = setTimeout(async () => {
+              try {
+                  const res = await ajaxGet(`/dashboard/search?term=${encodeURIComponent(q)}`);
+                  if(!res.ok || !res.body.length) {
+                      resultsBox.innerHTML = `<div class="p-4 text-center text-gray-500">No results found</div>`;
+                      return;
+                  }
+                  resultsBox.innerHTML = `<div class="divide-y divide-gray-100">` + 
+                      res.body.map(p => `
+                          <a href="/patients/${p.id}" class="block p-3 hover:bg-gray-50 transition-colors">
+                              <div class="font-medium text-gray-900">${escapeHtml(p.label)}</div>
+                              <div class="text-xs text-gray-500">${escapeHtml(p.phone || 'No phone')}</div>
+                          </a>
+                      `).join('') + `</div>`;
+              } catch(e) { resultsBox.innerHTML = `<div class="p-4 text-red-500">Error</div>`; }
+          }, 300);
+      });
+
+      document.addEventListener('click', e => {
+          if (!e.target.closest('#globalSearch') && !e.target.closest('#searchResults')) {
+              resultsBox.classList.add('hidden');
+          }
+      });
+  }
 
 })();
 </script>

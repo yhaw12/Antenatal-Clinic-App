@@ -26,7 +26,6 @@ class PatientWebController extends Controller
     {
         $rules = [
             'first_name' => 'required|string|max:191',
-            'last_name' => 'nullable|string|max:191',
             'folder_no' => 'nullable|string|max:191',
             'phone' => ['nullable','regex:/^0[0-9]{6,14}$/'],
             'whatsapp' => ['nullable','regex:/^0[0-9]{6,14}$/'],
@@ -54,12 +53,66 @@ class PatientWebController extends Controller
                 'next_review_date','address','complaints'
             ]));
 
-            // create an appointment for next_review_date (or today)
+            // ---------------------------------------------------------
+            // SMART SCHEDULING LOGIC
+            // ---------------------------------------------------------
+            
+            $apptDate = $request->input('next_review_date', Carbon::today()->toDateString());
+            $apptTime = $request->input('appointment_time'); // Check if user manually picked a time
+
+            // Only run smart logic if user didn't pick a time manually
+            if (empty($apptTime)) {
+                
+                // 1. Configuration
+                $startTime = Carbon::createFromTime(8, 0, 0);  // 8:00 AM
+                $endTime   = Carbon::createFromTime(16, 0, 0); // 4:00 PM
+                $interval  = 20; // Minutes per appointment
+
+                // 2. Find the LATEST appointment scheduled for that date
+                $lastAppointment = Appointment::where('date', $apptDate)
+                                              ->whereNotNull('time')
+                                              ->orderByDesc('time')
+                                              ->first();
+
+                if ($lastAppointment) {
+                    // Scenario A: Queue exists. Add interval to the last person's time.
+                    $lastTime = Carbon::parse($lastAppointment->time);
+                    $proposedTime = $lastTime->addMinutes($interval);
+                } else {
+                    // Scenario B: Day is empty. Start at 8:00 AM.
+                    $proposedTime = $startTime->copy();
+                }
+
+                // 3. Special Check for TODAY
+                // If it's today and the proposed time is already in the past (e.g., logic says 8am but it's 10am),
+                // we must bump it to NOW.
+                if ($apptDate === Carbon::today()->toDateString() && $proposedTime->isPast()) {
+                    // Round up to nearest 5 minutes for neatness
+                    $now = Carbon::now();
+                    $proposedTime = $now->addMinutes(5 - $now->minute % 5);
+                }
+
+                // 4. Validate Business Hours (08:00 - 16:00)
+                // If the calculated time is before 8am (unlikely) or after 4pm:
+                if ($proposedTime->lt($startTime)) {
+                    $apptTime = $startTime->format('H:i');
+                } elseif ($proposedTime->gt($endTime)) {
+                    // If schedule pushes past 4pm, leave as NULL (TBD) to alert staff
+                    $apptTime = null; 
+                } else {
+                    $apptTime = $proposedTime->format('H:i');
+                }
+            }
+
+            // ---------------------------------------------------------
+            // SAVE APPOINTMENT
+            // ---------------------------------------------------------
+
             $appointment = Appointment::create([
                 'patient_id' => $patient->id,
-                'date' => $request->input('next_review_date', Carbon::today()->toDateString()),
-                'time' => $request->input('appointment_time', null),
-                'status' => 'scheduled',
+                'date'       => $apptDate,
+                'time'       => $apptTime, 
+                'status'     => 'scheduled',
             ]);
 
             if ($request->ajax() || $request->wantsJson()) {

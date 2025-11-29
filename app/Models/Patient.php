@@ -25,6 +25,7 @@ class Patient extends Model
         'next_of_kin_name'  => 'encrypted',
         'next_of_kin_phone' => 'encrypted',
         'next_review_date' => 'date',
+        
     ];
 
     // relations
