@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
@@ -8,12 +9,14 @@ use App\Models\Attendance;
 use App\Models\CallLog;
 use App\Models\Patient;
 use App\Models\UserActivityLog;
-use App\Services\ActivityLogger;
-use Carbon\Carbon;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 class DashboardWebController extends Controller
 {
-   public function stats(Request $request)
+    public function stats(Request $request)
     {
         $date = $request->query('date', Carbon::today()->toDateString());
         $status = $request->query('status', '');
@@ -43,7 +46,6 @@ class DashboardWebController extends Controller
         $notArrived = max(0, $total - $present);
 
         // 2. KPI: New vs Review
-        // "New" = Patient registered on the same day as the appointment
         $newVisits = $appointments->filter(function($appt) use ($date) {
             return $appt->patient && $appt->patient->created_at->isSameDay(Carbon::parse($date));
         })->count();
@@ -59,38 +61,37 @@ class DashboardWebController extends Controller
         ]);
     }
 
-    /**
-     * Main Dashboard View
-     */
     public function dashboard(Request $request)
     {
         $date = $request->query('date', Carbon::today()->toDateString());
+        
+        // Dynamic Pagination Limit
+        // Default to 15 (Desktop), but respect 'per_page' if sent by frontend
+        $perPage = $request->query('per_page', 15); 
 
-        // 1. Fetch Appointments (All statuses, let JS filter the view)
+        // 1. Fetch Appointments with Pagination
         $appointmentsQuery = Appointment::with('patient')
             ->whereDate('date', $date)
             ->orderBy('time');
 
-        $appointments = $appointmentsQuery->paginate(20);
+        $appointments = $appointmentsQuery->paginate($perPage);
 
         // 2. Calculate KPIs for Initial Load
         $allAppts = Appointment::with('patient')->whereDate('date', $date)->get();
         $total = $allAppts->count();
         
-        // Present logic (Fallback to Appointment status if Attendance table empty)
         $present = Attendance::whereDate('date', $date)->where('is_present', true)->count();
         if ($present === 0) {
             $present = $allAppts->whereIn('status', ['queued', 'in_room', 'seen', 'present'])->count();
         }
         $notArrived = max(0, $total - $present);
 
-        // New vs Review Logic
         $newVisits = $allAppts->filter(function($appt) use ($date) {
             return $appt->patient && $appt->patient->created_at->isSameDay(Carbon::parse($date));
         })->count();
         $reviews = max(0, $total - $newVisits);
 
-        // 3. Percentage Change (Visual Candy)
+        // 3. Percentage Change
         $yesterday = Carbon::parse($date)->subDay()->toDateString();
         $yesterdayTotal = (int) Appointment::whereDate('date', $yesterday)->count();
 
@@ -130,158 +131,123 @@ class DashboardWebController extends Controller
     {
         $date = $request->query('date', Carbon::today()->toDateString());
         $status = $request->query('status');
-
         $query = Appointment::with('patient')->whereDate('date', $date);
-
+        
         if ($status) {
             switch ($status) {
-                case 'present':
-                    $query->whereIn('status', ['queued', 'in_room', 'seen', 'present']);
-                    break;
-                case 'missed':
-                    $query->where('status', 'missed');
-                    break;
-                case 'scheduled':
-                    $query->where('status', 'scheduled');
-                    break;
+                case 'present': $query->whereIn('status', ['queued', 'in_room', 'seen', 'present']); break;
+                case 'missed': $query->where('status', 'missed'); break;
+                case 'scheduled': $query->where('status', 'scheduled'); break;
             }
         }
-
-        $appointments = $query->orderBy('time')->get();
-
-        return response()->json($appointments);
+        return response()->json($query->orderBy('time')->get());
     }
 
-    
-    public function index(Request $request)
+    public function search(Request $request)
     {
-        $date = $request->query('date', Carbon::today()->toDateString());
+        $term = trim((string) $request->query('term', ''));
+        $date = $request->query('date'); 
 
-        $patients = Patient::with([
-                'appointments' => function ($q) {
-                    // bring latest appointment for display (by date desc)
-                    $q->orderByDesc('date')->orderByDesc('time')->limit(1);
-                },
-                'attendances' => function ($q) use ($date) {
-                    // attendance only for the requested date
-                    $q->where('date', $date);
-                }
-            ])->get();
-
-        $data = $patients->map(function ($p) {
-            $attendance = $p->attendances->first();
-            $appt = optional($p->appointments->first());
-            return [
-                'id' => $p->id,
-                'first_name' => $p->first_name,
-                'last_name' => $p->last_name,
-                'phone' => $p->phone,
-                'appointment_time' => $appt->time ?? null,
-                'is_present' => $attendance ? (bool) $attendance->is_present : false,
-                'id_number' => $p->id_number,
-                'hospital_number' => $p->hospital_number,
-            ];
-        });
-
-        return response()->json($data);
-    }
-
-  public function search(Request $request)
-{
-    $term = trim((string) $request->query('term', ''));
-    $date = $request->query('date'); // optional
-
-    if ($term === '') {
-        return response()->json([], 200);
-    }
-
-    // Normalize for matching against name_search (lowercased + collapsed spaces)
-    $termNormalized = mb_strtolower(preg_replace('/\s+/', ' ', $term));
-    $digits = preg_replace('/\D+/', '', $term);
-
-    try {
-        $patientsQuery = \App\Models\Patient::query();
-
-        if ($date) {
-            $patientsQuery->whereHas('appointments', function ($q) use ($date) {
-                $q->whereDate('date', $date);
-            });
+        if ($term === '') {
+            return response()->json([], 200);
         }
 
-        // eager load latest appointment (prefer the requested date if supplied)
-        $patientsQuery->with(['appointments' => function ($q) use ($date) {
-            if ($date) $q->whereDate('date', $date);
-            $q->orderBy('date', 'desc')->orderBy('time', 'desc')->limit(1);
-        }]);
+        // --- SECURITY: Check if user is Admin ---
+        // Adjust 'admin' to whatever role name you use in your system
+        $isAdmin = $request->user() && ($request->user()->hasRole('admin') || $request->user()->is_admin); 
+        $termNormalized = mb_strtolower(preg_replace('/\s+/', ' ', $term));
+        $digits = preg_replace('/\D+/', '', $term);
 
-        // Search the plaintext helper columns only
-        $patientsQuery->where(function ($q) use ($termNormalized, $digits, $term) {
-            $q->where('name_search', 'like', "%{$termNormalized}%");
+        try {
+            $patientsQuery = Patient::query();
 
-            if ($digits !== '') {
-                $q->orWhere('phone_search', 'like', "%{$digits}%");
-            }
+            if ($date) {
+                $patientsQuery->whereHas('appointments', function ($q) use ($date) {
+                    $q->whereDate('date', $date);
+                });
+            }else {
+            // Fallback: Just get latest appointment if no date context exists
+            $patientsQuery->with(['appointments' => function ($q) {
+                $q->orderBy('date', 'desc')->orderBy('time', 'desc')->limit(1);
+            }]);
+        }
 
-            // fallback on non-encrypted identifiers
-            $q->orWhere('hospital_number', 'like', "%{$term}%")
-              ->orWhere('id_number', 'like', "%{$term}%");
-        });
+            $patientsQuery->with(['appointments' => function ($q) use ($date) {
+                if ($date) $q->whereDate('date', $date);
+                $q->orderBy('date', 'desc')->orderBy('time', 'desc')->limit(1);
+            }]);
 
-        $patients = $patientsQuery->limit(30)->get();
+            $patientsQuery->where(function ($q) use ($termNormalized, $digits, $term) {
+                $q->where('name_search', 'like', "%{$termNormalized}%");
+                if ($digits !== '') {
+                    $q->orWhere('phone_search', 'like', "%{$digits}%");
+                }
+                $q->orWhere('hospital_number', 'like', "%{$term}%")
+                  ->orWhere('id_number', 'like', "%{$term}%");
+            });
 
-        $results = $patients->map(function ($p) {
-            // try to decrypt for display; if decryption fails, fall back to name_search
-            $first = null; $last = null; $phone = null;
-            try { $first = $p->first_name; } catch (\Throwable $e) { /* ignore */ }
-            try { $last  = $p->last_name;  } catch (\Throwable $e) { /* ignore */ }
-            try { $phone = $p->phone;      } catch (\Throwable $e) { /* ignore */ }
+            $patients = $patientsQuery->limit(30)->get();
 
-            if (empty($first) && empty($last) && !empty($p->name_search)) {
-                $parts = preg_split('/\s+/', $p->name_search);
-                $parts = array_map(function ($n) {
-                    return mb_convert_case($n, MB_CASE_TITLE, "UTF-8");
-                }, $parts);
-                $first = $parts[0] ?? null;
-                $last  = count($parts) > 1 ? $parts[count($parts)-1] : null;
-            }
+            $results = $patients->map(function ($p) use ($isAdmin) {
+                // 1. Decrypt Data
+                $first = null; $last = null; $phone = null;
+                try { $first = $p->first_name; } catch (\Throwable $e) { }
+                try { $last  = $p->last_name;  } catch (\Throwable $e) { }
+                try { $phone = $p->phone;      } catch (\Throwable $e) { }
 
-            $appt = optional($p->appointments->first());
-            $apptTime = null; $apptDate = null;
-            if ($appt && $appt->time) {
-                try { $apptTime = \Illuminate\Support\Carbon::parse($appt->time)->format('h:i A'); } catch (\Throwable $e) { $apptTime = $appt->time; }
-            }
-            if ($appt && $appt->date) {
-                try { $apptDate = \Illuminate\Support\Carbon::parse($appt->date)->toDateString(); } catch (\Throwable $e) { $apptDate = $appt->date; }
-            }
+                // 2. Handle Name
+                if (empty($first) && empty($last) && !empty($p->name_search)) {
+                    $parts = preg_split('/\s+/', $p->name_search);
+                    $parts = array_map(function ($n) { return mb_convert_case($n, MB_CASE_TITLE, "UTF-8"); }, $parts);
+                    $first = $parts[0] ?? null;
+                    $last  = count($parts) > 1 ? $parts[count($parts)-1] : null;
+                }
 
-            $fullName = trim(($first ?? '') . ' ' . ($last ?? ''));
-            if (!$fullName) {
-                $fullName = $p->name_search ? mb_convert_case($p->name_search, MB_CASE_TITLE, "UTF-8") : 'Unknown';
-            }
+                // --- 3. MASK PHONE NUMBER (Security Logic) ---
+                if ($phone && !$isAdmin) {
+                    $len = strlen($phone);
+                    if ($len > 5) {
+                        // Show 1st digit, mask middle, show last 4
+                        $phone = substr($phone, 0, 1) . str_repeat('*', $len - 5) . substr($phone, -4);
+                    } else {
+                        $phone = '******';
+                    }
+                }
 
-            return [
-                'id' => $p->id,
-                'first_name' => $first,
-                'last_name'  => $last,
-                'phone' => $phone,
-                'hospital_number' => $p->hospital_number,
-                'appointment_date' => $apptDate,
-                'appointment_time' => $apptTime,
-                'label' => $fullName,
-            ];
-        })->values();
+                // 4. Appt Info
+                $appt = optional($p->appointments->first());
+                $apptTime = null; $apptDate = null;
+                if ($appt && $appt->time) {
+                    try { $apptTime = Carbon::parse($appt->time)->format('h:i A'); } catch (\Throwable $e) { $apptTime = $appt->time; }
+                }
+                if ($appt && $appt->date) {
+                    try { $apptDate = Carbon::parse($appt->date)->toDateString(); } catch (\Throwable $e) { $apptDate = $appt->date; }
+                }
 
-        return response()->json($results, 200);
-    } catch (\Throwable $e) {
-        \Illuminate\Support\Facades\Log::error('Dashboard search error', [
-            'term' => $term,
-            'date' => $date,
-            'exception' => $e->getMessage(),
-            'trace' => $e->getTraceAsString(),
-        ]);
-        return response()->json([], 200);
+                $fullName = trim(($first ?? '') . ' ' . ($last ?? ''));
+                if (!$fullName) {
+                    $fullName = $p->name_search ? mb_convert_case($p->name_search, MB_CASE_TITLE, "UTF-8") : 'Unknown';
+                }
+
+                return [
+                    'id' => $p->id,
+                    'first_name' => $first,
+                    'last_name'  => $last,
+                    'phone' => $phone, // Will be masked for non-admins
+                    'hospital_number' => $p->hospital_number,
+                    'appointment_date' => $appt ? $appt->date : null, 
+                    'appointment_time' => $apptTime,
+                    'label' => $fullName,
+                ];
+            })->values();
+
+            return response()->json($results, 200);
+        } catch (\Throwable $e) {
+            Log::error('Dashboard search error', [
+                'term' => $term,
+                'error' => $e->getMessage()
+            ]);
+            return response()->json([], 200);
+        }
     }
-}
-
-
 }

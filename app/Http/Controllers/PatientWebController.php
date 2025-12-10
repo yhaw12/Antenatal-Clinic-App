@@ -66,7 +66,7 @@ class PatientWebController extends Controller
                 // 1. Configuration
                 $startTime = Carbon::createFromTime(8, 0, 0);  // 8:00 AM
                 $endTime   = Carbon::createFromTime(16, 0, 0); // 4:00 PM
-                $interval  = 20; // Minutes per appointment
+                $interval  = 5; // Minutes per appointment
 
                 // 2. Find the LATEST appointment scheduled for that date
                 $lastAppointment = Appointment::where('date', $apptDate)

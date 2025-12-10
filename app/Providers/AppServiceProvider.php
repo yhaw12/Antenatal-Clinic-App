@@ -28,10 +28,6 @@ class AppServiceProvider extends ServiceProvider
     User::observe(UserObserver::class);
 }
 
-protected $listen = [
-    \Illuminate\Auth\Events\Login::class => [
-        \App\Listeners\RecordLastLogin::class,
-    ],
-];
+
 
 }

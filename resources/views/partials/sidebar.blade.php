@@ -60,16 +60,14 @@ if ($user && (
 $menuItems = $menuItems ?? $items;
 @endphp
 
+<div class="space-y-1 p-2" style="border:1px solid var(--border); border-radius: 16px;">
 
-<div class="space-y-1" style="border:1px solid var(--border);">
-
-  <!-- Navigation Links -->
-  <nav id="mobile-sidebar" class="space-y-1 px-2" aria-label="Main navigation">
+  <nav id="mobile-sidebar" class="space-y-1" aria-label="Main navigation">
     @foreach($menuItems as $item)
       @php $isActive = request()->routeIs($item['active']); @endphp
 
       <a href="{{ $item['route'] }}"
-        class="group flex items-center px-3 py-3 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2"
+        class="group flex items-center px-3 py-3 rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2"
         style="
           color: {{ $isActive ? 'var(--brand)' : 'var(--text)' }};
           background: {{ $isActive ? 'color-mix(in srgb, var(--brand) 8%, transparent)' : 'transparent' }};
@@ -99,17 +97,14 @@ $menuItems = $menuItems ?? $items;
     @endforeach
   </nav>
 
-  <!-- Mobile sidebar overlay (place directly after the mobile-sidebar nav) -->
   <div id="mobile-sidebar-overlay" aria-hidden="true" style="position:fixed; inset:0; background:rgba(0,0,0,0.35); display:none;"></div>
 
-  <!-- Divider -->
-  <div class="px-2 my-4">
+  <div class="px-2 my-2">
     <div style="border-top:1px solid var(--border);"></div>
   </div>
 
-  <!-- Settings & Help -->
-  <div class="space-y-1 px-2" style="background:var(--surface); color:var(--text); border:1px solid var(--border); box-shadow:var(--shadow);">
-    <a href="{{ route('settings.index') }}" class="group flex items-center px-3 py-3 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2"
+  <div class="space-y-1" style="background:var(--surface); color:var(--text); border-radius: 12px;">
+    <a href="{{ route('settings.index') }}" class="group flex items-center px-3 py-3 rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 hover:bg-black/5 dark:hover:bg-white/5"
        style="color:var(--text);">
       <div class="w-6 h-6 flex-shrink-0 flex items-center justify-center mr-3" style="color:var(--muted);">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" role="img">
@@ -120,11 +115,11 @@ $menuItems = $menuItems ?? $items;
       </div>
       <span class="text-sm font-medium">Settings</span>
     </a>
-
-   
   </div>
 
-<div class="card p-4" style="background:var(--surface); color:var(--text); border:1px solid var(--border); box-shadow:var(--shadow);">
+</div>
+
+<div class="card p-4 mt-4" style="background:var(--surface); color:var(--text); border:1px solid var(--border); box-shadow:var(--shadow); border-radius: 16px;">
     <h3 class="text-lg font-semibold mb-2">Login Status</h3>
     @auth
       <div class="text-sm space-y-2" style="color:var(--text);">
@@ -134,9 +129,8 @@ $menuItems = $menuItems ?? $items;
         
         <p class="flex items-center gap-2">
             <strong>Role:</strong> 
-            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wide"
+            <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-bold uppercase tracking-wide"
                   style="background: color-mix(in srgb, var(--brand) 10%, transparent); color: var(--brand); border: 1px solid color-mix(in srgb, var(--brand) 20%, transparent);">
-                {{-- Get role name, remove underscores, capitalize --}}
                 {{ auth()->user()->getRoleNames()->first() ? str_replace('_', ' ', ucfirst(auth()->user()->getRoleNames()->first())) : (auth()->user()->role ?? 'Staff') }}
             </span>
         </p>
@@ -148,7 +142,7 @@ $menuItems = $menuItems ?? $items;
 
       <form method="POST" action="{{ route('logout') }}" class="mt-4">
         @csrf
-        <button type="submit" class="btn-danger w-full flex items-center justify-center gap-2 py-2 text-xs font-bold uppercase tracking-widest">
+        <button type="submit" class="btn-danger w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all hover:opacity-90">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
             Logout
         </button>
@@ -156,12 +150,11 @@ $menuItems = $menuItems ?? $items;
     @else
       <div class="text-center space-y-3">
           <p class="text-sm text-muted">You are currently browsing as a guest.</p>
-          <a href="{{ route('login') }}" class="w-full block btn-primary text-center py-2 shadow-lg shadow-brand/20">
+          <a href="{{ route('login') }}" class="w-full block btn-primary text-center py-2 rounded-xl shadow-lg shadow-brand/20">
               Log In
           </a>
       </div>
     @endauth
-  </div>
 </div>
 
 @push('scripts')
@@ -179,10 +172,10 @@ document.addEventListener('DOMContentLoaded', () => {
   Object.assign(tooltip.style, {
     position: 'fixed',
     padding: '6px 8px',
-    background: 'var(--text)',              // we'll invert colors below
+    background: 'var(--text)',
     color: 'var(--bg)',
     fontSize: '12px',
-    borderRadius: '6px',
+    borderRadius: '8px', // Updated tooltip radius
     opacity: '0',
     pointerEvents: 'none',
     zIndex: '9999',

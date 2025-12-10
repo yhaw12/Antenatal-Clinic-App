@@ -30,7 +30,7 @@
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
-        <div class="glass-card rounded-3xl shadow-sm border overflow-hidden min-h-[500px]" style="background: var(--surface); border-color: var(--border);">
+        <div class="glass-card rounded-sm shadow-sm border overflow-hidden min-h-[500px]" style="background: var(--surface); border-color: var(--border);">
             
             <div class="px-6 py-4 border-b flex items-center justify-between bg-gray-50/50 dark:bg-white/5" style="border-color: var(--border);">
                 <h2 class="font-bold text-sm uppercase tracking-wide" style="color: var(--muted)">Appointments List</h2>
@@ -79,10 +79,10 @@
 
                             <div class="flex items-center gap-2">
                                 @if($status !== 'present' && $status !== 'missed')
-                                    <button onclick="markStatus({{ $appt->id }}, 'present')" class="p-2 rounded-lg hover:bg-emerald-50 text-emerald-600 transition-colors" title="Mark Present">
+                                    <button onclick="confirmStatusChange({{ $appt->id }}, 'present')" class="p-2 rounded-lg hover:bg-emerald-50 text-emerald-600 transition-colors" title="Mark Present">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                                     </button>
-                                    <button onclick="markStatus({{ $appt->id }}, 'missed')" class="p-2 rounded-lg hover:bg-rose-50 text-rose-600 transition-colors" title="Mark Missed">
+                                    <button onclick="confirmStatusChange({{ $appt->id }}, 'missed')" class="p-2 rounded-lg hover:bg-rose-50 text-rose-600 transition-colors" title="Mark Missed">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                                     </button>
                                 @endif
@@ -107,13 +107,156 @@
     </main>
 </div>
 
+{{-- 1. Confirmation Modal --}}
+<div id="confirmationModal" class="fixed inset-0 z-[60] hidden" role="dialog" aria-modal="true">
+    <div class="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity opacity-0" id="confirmationBackdrop"></div>
+    
+    <div class="relative min-h-screen flex items-center justify-center p-4">
+        <div class="w-full max-w-sm rounded-2xl shadow-2xl transform scale-95 opacity-0 transition-all duration-200" 
+             id="confirmationPanel"
+             style="background: var(--surface); border: 1px solid var(--border);">
+            
+            <div class="p-6 text-center">
+                <div class="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4" id="confirmationIconBg">
+                    <svg id="confirmationIcon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"></svg>
+                </div>
+                
+                <h3 class="text-lg font-bold mb-2" style="color: var(--text)">Confirm Action</h3>
+                <p class="text-sm mb-6" style="color: var(--muted)">
+                    Are you sure you want to mark this appointment as <strong id="confirmationStatusText" class="uppercase"></strong>?
+                </p>
+                
+                <div class="flex gap-3">
+                    <button onclick="closeConfirmation()" 
+                            class="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium border transition-colors hover:bg-gray-50 dark:hover:bg-white/5"
+                            style="border-color: var(--border); color: var(--text);">
+                        Cancel
+                    </button>
+                    <button id="confirmActionBtn" 
+                            class="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-white shadow-lg transition-transform active:scale-95">
+                        Confirm
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- 2. Call Modal (Existing) --}}
+<div id="callModal" class="fixed inset-0 z-50 hidden" role="dialog">
+    <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeModal('callModal')"></div>
+    </div>
+
 <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-3 pointer-events-none"></div>
 
 @endsection
 
 @push('scripts')
 <script>
-    // Toast Helper
+    // --- Variables to store current action ---
+    let pendingId = null;
+    let pendingStatus = null;
+
+    // --- 1. Open Confirmation Modal ---
+    function confirmStatusChange(id, status) {
+        pendingId = id;
+        pendingStatus = status;
+
+        const modal = document.getElementById('confirmationModal');
+        const backdrop = document.getElementById('confirmationBackdrop');
+        const panel = document.getElementById('confirmationPanel');
+        const text = document.getElementById('confirmationStatusText');
+        const btn = document.getElementById('confirmActionBtn');
+        const iconBg = document.getElementById('confirmationIconBg');
+        const icon = document.getElementById('confirmationIcon');
+
+        // Update Text
+        text.innerText = status;
+
+        // Update Colors based on status
+        if (status === 'present') {
+            text.style.color = 'var(--success)';
+            btn.style.background = 'var(--success)';
+            btn.classList.add('shadow-emerald-500/30');
+            iconBg.style.background = 'color-mix(in srgb, var(--success) 10%, transparent)';
+            iconBg.style.color = 'var(--success)';
+            icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>'; // Checkmark
+        } else {
+            text.style.color = 'var(--danger)';
+            btn.style.background = 'var(--danger)';
+            btn.classList.add('shadow-rose-500/30');
+            iconBg.style.background = 'color-mix(in srgb, var(--danger) 10%, transparent)';
+            iconBg.style.color = 'var(--danger)';
+            icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>'; // X Mark
+        }
+
+        // Show Modal with Animation
+        modal.classList.remove('hidden');
+        requestAnimationFrame(() => {
+            backdrop.classList.remove('opacity-0');
+            panel.classList.remove('scale-95', 'opacity-0');
+            panel.classList.add('scale-100', 'opacity-100');
+        });
+    }
+
+    // --- 2. Close Confirmation Modal ---
+    function closeConfirmation() {
+        const modal = document.getElementById('confirmationModal');
+        const backdrop = document.getElementById('confirmationBackdrop');
+        const panel = document.getElementById('confirmationPanel');
+
+        backdrop.classList.add('opacity-0');
+        panel.classList.remove('scale-100', 'opacity-100');
+        panel.classList.add('scale-95', 'opacity-0');
+
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            pendingId = null;
+            pendingStatus = null;
+        }, 200);
+    }
+
+    // --- 3. Execute Action (When Confirm Clicked) ---
+    document.getElementById('confirmActionBtn').addEventListener('click', async () => {
+        if (!pendingId || !pendingStatus) return;
+
+        // Visual loading state
+        const btn = document.getElementById('confirmActionBtn');
+        const originalText = btn.innerText;
+        btn.innerText = 'Processing...';
+        btn.disabled = true;
+
+        const endpoint = pendingStatus === 'present' ? '/daily-queue/mark-present' : '/daily-queue/mark-absent';
+
+        try {
+            const res = await fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify({ appointment_ids: [pendingId] })
+            });
+
+            if(res.ok) {
+                showToast(`Marked as ${pendingStatus}`);
+                closeConfirmation();
+                setTimeout(() => window.location.reload(), 300); // Quick reload to update list
+            } else {
+                showToast('Action failed', 'error');
+                closeConfirmation();
+            }
+        } catch(e) {
+            console.error(e);
+            showToast('Network error', 'error');
+            closeConfirmation();
+        } finally {
+            btn.innerText = originalText;
+            btn.disabled = false;
+        }
+    });
+
+    // --- Toast Helper ---
     function showToast(message, type = 'success') {
         const container = document.getElementById('toast-container');
         const el = document.createElement('div');
@@ -126,34 +269,6 @@
             el.classList.add('translate-y-10', 'opacity-0');
             setTimeout(() => el.remove(), 300);
         }, 3000);
-    }
-
-    // Quick Status Actions
-    async function markStatus(id, status) {
-        if(!confirm(`Mark this appointment as ${status.toUpperCase()}?`)) return;
-
-        const endpoint = status === 'present' ? '/daily-queue/mark-present' : '/daily-queue/mark-absent';
-        
-        try {
-            const res = await fetch(endpoint, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                },
-                body: JSON.stringify({ appointment_ids: [id] })
-            });
-
-            if(res.ok) {
-                showToast(`Marked as ${status}`);
-                setTimeout(() => window.location.reload(), 500);
-            } else {
-                showToast('Action failed', 'error');
-            }
-        } catch(e) {
-            console.error(e);
-            showToast('Network error', 'error');
-        }
     }
 </script>
 @endpush
