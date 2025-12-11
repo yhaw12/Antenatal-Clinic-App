@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\CallLog;
 use App\Models\Appointment;
+use App\Models\Patient;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 
 class CallLogWebController extends Controller
@@ -16,13 +18,14 @@ class CallLogWebController extends Controller
         $pageSize = 40;
 
         $logsQuery = CallLog::with(['patient', 'caller'])->orderByDesc('call_time');
+        
         if ($date) {
             $logsQuery->whereDate('call_time', $date);
         }
 
         $logs = $logsQuery->paginate($pageSize)->appends($request->query());
 
-        $today = \Illuminate\Support\Carbon::today();
+        $today = Carbon::today();
         $weekStart = $today->copy()->startOfWeek();
         $weekEnd = $today->copy()->endOfWeek();
         $monthStart = $today->copy()->startOfMonth();
@@ -30,15 +33,17 @@ class CallLogWebController extends Controller
 
         if ($date) {
             try {
-                $pivot = \Illuminate\Support\Carbon::parse($date);
+                $pivot = Carbon::parse($date);
                 $weekStart = $pivot->copy()->startOfWeek();
                 $weekEnd = $pivot->copy()->endOfWeek();
                 $monthStart = $pivot->copy()->startOfMonth();
                 $monthEnd = $pivot->copy()->endOfMonth();
             } catch (\Throwable $e) {
+                // Invalid date format fallback to today defaults
             }
         }
 
+        // --- Statistics Logic ---
         $callsWeekCount = CallLog::whereBetween('call_time', [$weekStart->startOfDay(), $weekEnd->endOfDay()])->count();
         $callsMonthCount = CallLog::whereBetween('call_time', [$monthStart->startOfDay(), $monthEnd->endOfDay()])->count();
 
@@ -48,11 +53,18 @@ class CallLogWebController extends Controller
         $notCalledWeekCount = max(0, $apptsWeekCount - $callsWeekCount);
         $notCalledMonthCount = max(0, $apptsMonthCount - $callsMonthCount);
 
+        // --- "Who hasn't been called?" Logic ---
         $calledAppointmentIdsWeek = CallLog::whereBetween('call_time', [$weekStart->startOfDay(), $weekEnd->endOfDay()])
-            ->whereNotNull('appointment_id')->pluck('appointment_id')->unique()->toArray();
+            ->whereNotNull('appointment_id')
+            ->pluck('appointment_id')
+            ->unique()
+            ->toArray();
 
         $calledAppointmentIdsMonth = CallLog::whereBetween('call_time', [$monthStart->startOfDay(), $monthEnd->endOfDay()])
-            ->whereNotNull('appointment_id')->pluck('appointment_id')->unique()->toArray();
+            ->whereNotNull('appointment_id')
+            ->pluck('appointment_id')
+            ->unique()
+            ->toArray();
 
         $notCalledAppointmentsWeek = Appointment::with('patient')
             ->whereBetween('date', [$weekStart->toDateString(), $weekEnd->toDateString()])
@@ -89,8 +101,10 @@ class CallLogWebController extends Controller
     {
         $appointmentId = $request->query('appointment_id');
         $patientId = $request->query('patient_id');
+        
         $appointment = $appointmentId ? Appointment::with('patient')->find($appointmentId) : null;
         $patient = $patientId ? Patient::find($patientId) : null;
+        
         return view('call_logs.create', compact('appointment', 'patient'));
     }
 
@@ -98,7 +112,7 @@ class CallLogWebController extends Controller
     {
         $data = $request->validate([
             'appointment_id' => 'nullable|exists:appointments,id',
-            'patient_id'     => 'required|exists:patients,id', // This was failing because input was missing in View
+            'patient_id'     => 'required|exists:patients,id',
             'result'         => 'required|in:no_answer,rescheduled,will_attend,refused,incorrect_number',
             'notes'          => 'nullable|string',
         ]);
@@ -109,18 +123,21 @@ class CallLogWebController extends Controller
 
             $call = CallLog::create($data);
 
+            // Logic: Update Appointment Status based on Call Result
             if (!empty($data['appointment_id'])) {
                 $appt = Appointment::find($data['appointment_id']);
                 if ($appt) {
                     if ($data['result'] === 'rescheduled') {
-                        $appt->update(['status' => 'scheduled']);
-                    } elseif ($data['result'] === 'will_attend') {
+                        $appt->update(['status' => 'rescheduled']);
+                    } 
+                    elseif ($data['result'] === 'will_attend') {
                         $appt->update(['status' => 'queued']);
                     }
+                    // For 'no_answer', we keep the current status but the view will 
+                    // check the call log history to show the 'No Answer' badge.
                 }
             }
 
-            // CRITICAL FIX: Return JSON if AJAX
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => true,
@@ -130,6 +147,7 @@ class CallLogWebController extends Controller
             }
 
             return redirect()->route('call_logs')->with('success', 'Call logged');
+
         } catch (\Exception $e) {
             Log::error('Failed to log call', ['error' => $e->getMessage(), 'payload' => $data]);
             
@@ -141,23 +159,34 @@ class CallLogWebController extends Controller
         }
     }
 
-    // CRITICAL FIX: Added missing method for "Mark Seen"
+    /**
+     * Mark an appointment as seen.
+     */
     public function markSeen(Request $request, $id)
     {
         try {
             $appointment = Appointment::findOrFail($id);
+            
+            // 1. Update the status in the database
             $appointment->update(['status' => 'seen']);
 
+            // 2. Return JSON success
             if ($request->wantsJson() || $request->ajax()) {
-                return response()->json(['success' => true, 'message' => 'Appointment marked as seen']);
+                return response()->json([
+                    'success' => true, 
+                    'message' => 'Appointment marked as seen'
+                ]);
             }
 
             return back()->with('success', 'Appointment marked as seen');
+
         } catch (\Exception $e) {
-            if ($request->wantsJson() || $request->ajax()) {
-                return response()->json(['message' => 'Failed to update status'], 500);
+            Log::error('Mark seen failed', ['id' => $id, 'error' => $e->getMessage()]);
+            
+            if ($request->wantsJson()) {
+                return response()->json(['message' => 'Server error'], 500);
             }
-            return back()->with('error', 'Failed to update status');
+            return back()->with('error', 'Could not update status');
         }
     }
 }

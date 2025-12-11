@@ -297,6 +297,62 @@
             });
         });
     </script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set timeout to 5 minutes (in milliseconds)
+        const inactivityTime = 10 * 60 * 1000; 
+        let timeout;
+
+        function resetTimer() {
+            clearTimeout(timeout);
+            timeout = setTimeout(logoutUser, inactivityTime);
+        }
+
+        function logoutUser() {
+            // We use AJAX (fetch) instead of a form submit.
+            // This allows us to catch the 419 "Page Expired" error and ignore it.
+            
+            // 1. Find the logout URL
+            const logoutUrl = "{{ route('logout') }}";
+            
+            // 2. Find the CSRF Token (try meta tag first, then form input)
+            let token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            if (!token) {
+                const formTokenInput = document.querySelector('#logout-form input[name="_token"]');
+                if (formTokenInput) token = formTokenInput.value;
+            }
+
+            // 3. Send the POST request
+            fetch(logoutUrl, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': token,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({})
+            })
+            .then(() => {
+                // Success (200) OR Expired (419) - doesn't matter, we are done.
+                // Redirect to login page
+                window.location.href = "{{ route('login') }}";
+            })
+            .catch(() => {
+                // Network error or other crash? Force redirect anyway.
+                window.location.href = "{{ route('login') }}";
+            });
+        }
+
+        // Reset timer on activity
+        const events = ['mousemove', 'keypress', 'click', 'scroll', 'touchstart'];
+        events.forEach(event => {
+            document.addEventListener(event, resetTimer);
+        });
+
+        // Start the timer
+        resetTimer();
+    });
+</script>
 
     @stack('scripts')
 </body>

@@ -131,25 +131,60 @@
                                 </div>
                             </div>
 
-                            <div class="flex gap-2 w-full sm:w-auto flex-wrap">
-                                {{-- Log Call Button --}}
-                                <button onclick="openCallModal({{ $appointment->id }}, '{{ addslashes($patient->first_name) }}', '{{ $patient->phone }}')"
-                                        class="flex-1 sm:flex-none px-4 py-2 rounded-xl text-sm font-bold transition-all hover:scale-105 active:scale-95"
-                                        style="background: var(--bg); color: var(--text); border: 1px solid var(--border);">
-                                    📞 Log Call
-                                </button>
+                            <div class="flex gap-2 w-full sm:w-auto flex-wrap items-center">
+    
+                                {{-- LOGIC 1: CHECK CALL LOGS --}}
+                                @php
+                                    $lastCall = $appointment->callLogs->sortByDesc('created_at')->first();
+                                @endphp
 
-                                {{-- Refer Button --}}
-                                <button onclick="openReferralModal({{ $patient->id }}, {{ $appointment->id }})"
-                                        class="flex-1 sm:flex-none px-4 py-2 rounded-xl text-sm font-bold transition-all hover:scale-105 active:scale-95"
-                                        style="background: color-mix(in srgb, var(--accent) 10%, transparent); color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent);">
-                                    ↗ Refer
-                                </button>
+                                @if($lastCall)
+                                    <div class="flex items-center gap-2 px-3 py-2 rounded-xl border" style="background: var(--bg); border-color: var(--border);">
+                                        <div class="text-right leading-tight">
+                                            <div class="text-[9px] uppercase font-bold tracking-wider" style="color: var(--muted)">Call Result</div>
+                                            <div class="text-xs font-bold" style="color: {{ $lastCall->result == 'will_attend' ? 'var(--success)' : 'var(--brand)' }}">
+                                                {{ str_replace('_', ' ', ucfirst($lastCall->result)) }}
+                                            </div>
+                                        </div>
+                                        <button onclick="openCallModal({{ $appointment->id }}, '{{ addslashes($patient->first_name) }}', '{{ $patient->phone }}')" 
+                                                class="p-1.5 rounded-lg transition-colors hover:bg-gray-200 dark:hover:bg-white/10" 
+                                                title="Log another call">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                                        </button>
+                                    </div>
+                                @else
+                                    <button onclick="openCallModal({{ $appointment->id }}, '{{ addslashes($patient->first_name) }}', '{{ $patient->phone }}')" 
+                                            class="flex-1 sm:flex-none px-4 py-2 rounded-xl text-sm font-bold transition-all hover:scale-105 active:scale-95" 
+                                            style="background: var(--bg); color: var(--text); border: 1px solid var(--border);">
+                                        📞 Log Call
+                                    </button>
+                                @endif
 
-                                {{-- Mark Seen Button --}}
-                                @if($appointment->status !== 'seen')
+
+                                {{-- LOGIC 2: CHECK REFERRAL STATUS --}}
+                                @if($appointment->status === 'referred')
+                                    <div class="px-4 py-2 rounded-xl text-sm font-bold border opacity-70 cursor-not-allowed flex items-center gap-2" 
+                                         style="background: color-mix(in srgb, var(--accent) 5%, transparent); color: var(--accent); border-color: var(--accent);">
+                                        <span>↗ Referred</span>
+                                    </div>
+                                @else
+                                    <button onclick="openReferralModal({{ $patient->id }}, {{ $appointment->id }})" 
+                                            class="flex-1 sm:flex-none px-4 py-2 rounded-xl text-sm font-bold transition-all hover:scale-105 active:scale-95" 
+                                            style="background: color-mix(in srgb, var(--accent) 10%, transparent); color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent);">
+                                        ↗ Refer
+                                    </button>
+                                @endif
+
+
+                                {{-- LOGIC 3: MARK SEEN --}}
+                                @if($appointment->status === 'seen')
+                                    <div class="px-4 py-2 rounded-xl text-sm font-bold border flex items-center gap-2" 
+                                         style="background: color-mix(in srgb, var(--success) 5%, transparent); color: var(--success); border-color: var(--success);">
+                                        <span>✓ Patient Seen</span>
+                                    </div>
+                                @elseif($appointment->status !== 'referred')
                                     <button onclick="openMarkSeenModal({{ $appointment->id }})" 
-                                            class="flex-1 sm:flex-none px-4 py-2 rounded-xl text-sm font-bold transition-all hover:scale-105 active:scale-95"
+                                            class="flex-1 sm:flex-none px-4 py-2 rounded-xl text-sm font-bold transition-all hover:scale-105 active:scale-95" 
                                             style="background: color-mix(in srgb, var(--success) 10%, transparent); color: var(--success); border: 1px solid color-mix(in srgb, var(--success) 20%, transparent);">
                                         ✓ Mark Seen
                                     </button>
@@ -236,7 +271,6 @@
         <div class="fixed inset-0 z-10 overflow-y-auto">
             <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
                 <div id="callModalPanel" class="relative transform overflow-hidden rounded-3xl text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-lg opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" style="background: var(--surface); color: var(--text);">
-                    
                     <div class="px-6 py-6">
                         <div class="flex justify-between items-center mb-6">
                             <h3 class="text-xl font-bold" id="modal-title">Log Call Result</h3>
@@ -245,17 +279,14 @@
                                 <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                             </button>
                         </div>
-                        
                         <div class="mb-6 p-4 rounded-2xl flex items-center justify-between" style="background: color-mix(in srgb, var(--brand) 10%, transparent); color: var(--brand);">
                             <span>Calling: <span id="callPatientName" class="font-bold"></span></span>
                             <a id="telLink" href="#" class="font-bold hover:underline">Dial Now ↗</a>
                         </div>
-
                         <form id="callLogForm" method="POST" action="{{ route('call_logs.store') }}">
                             @csrf
                             <input type="hidden" name="appointment_id" id="callAppointmentId">
                             <input type="hidden" name="patient_id" value="{{ $patient->id }}">
-                            
                             <div class="space-y-5">
                                 <div class="space-y-1">
                                     <label class="block text-sm font-medium" style="color:var(--muted)">Call Result <span class="text-red-500">*</span></label>
@@ -269,13 +300,11 @@
                                         <option value="incorrect_number">Incorrect Number</option>
                                     </select>
                                 </div>
-                                
                                 <div>
                                     <label class="block text-sm font-bold mb-2" style="color: var(--muted)">Notes</label>
                                     <textarea name="notes" rows="3" class="w-full rounded-xl border-0 ring-1 ring-inset ring-gray-300 dark:ring-gray-700 focus:ring-2 focus:ring-inset focus:ring-brand text-gray-900 dark:text-white bg-transparent" placeholder="Add details..."></textarea>
                                 </div>
                             </div>
-
                             <div class="mt-8 sm:flex sm:flex-row-reverse gap-3">
                                 <button type="submit" id="saveCallBtn" class="inline-flex w-full justify-center rounded-xl px-6 py-3 text-sm font-bold text-white shadow-lg hover:shadow-xl transition-all active:scale-95 sm:w-auto" style="background: var(--brand);">
                                     <span class="btn-text">Save Log</span>
@@ -296,7 +325,6 @@
             <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
                 <div id="referralModalPanel" class="relative transform overflow-hidden rounded-3xl text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-lg opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" 
                      style="background: var(--surface); color: var(--text);">
-                    
                     <div class="px-6 py-6">
                         <div class="flex justify-between items-center mb-6">
                             <h3 class="text-xl font-bold" id="referral-modal-title">Refer Patient</h3>
@@ -305,24 +333,20 @@
                                 <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                             </button>
                         </div>
-                        
                         <div class="mb-6 p-4 rounded-2xl flex items-center gap-3" style="background: color-mix(in srgb, var(--accent) 10%, transparent); color: var(--accent);">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
                             <span class="text-sm font-medium">Referring: <strong>{{ $patient->first_name }} {{ $patient->last_name }}</strong></span>
                         </div>
-
                         <form id="referralForm" method="POST" action="{{ route('referrals.store') }}">
                             @csrf
                             <input type="hidden" name="patient_id" value="{{ $patient->id }}">
                             <input type="hidden" name="appointment_id" id="referralAppointmentId">
-                            
                             <div class="space-y-5">
                                 <div>
                                     <label class="block text-sm font-bold mb-2" style="color: var(--muted)">Referral Notes / Reason <span class="text-red-500">*</span></label>
                                     <textarea name="reason" required rows="5" class="w-full rounded-xl border-0 ring-1 ring-inset ring-gray-300 dark:ring-gray-700 focus:ring-2 focus:ring-inset focus:ring-accent text-gray-900 dark:text-white bg-transparent" placeholder="Enter clinical reason for referral..."></textarea>
                                 </div>
                             </div>
-
                             <div class="mt-8 sm:flex sm:flex-row-reverse gap-3">
                                 <button type="submit" id="submitReferralBtn" class="inline-flex w-full justify-center rounded-xl px-6 py-3 text-sm font-bold text-white shadow-lg hover:shadow-xl transition-all active:scale-95 sm:w-auto" style="background: var(--accent);">
                                     <span class="btn-text">Submit Referral</span>
@@ -336,26 +360,23 @@
         </div>
     </div>
 
-    {{-- 3. Mark Seen Modal --}}
+    {{-- 3. Mark Seen Modal (Restored) --}}
     <div id="markSeenModal" class="fixed inset-0 z-50 hidden" aria-labelledby="seen-modal-title" role="dialog" aria-modal="true">
         <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity opacity-0" id="markSeenBackdrop"></div>
         <div class="fixed inset-0 z-10 overflow-y-auto">
             <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
                 <div id="markSeenPanel" class="relative transform overflow-hidden rounded-3xl text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-md opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" 
                      style="background: var(--surface); color: var(--text);">
-                    
                     <div class="p-6 text-center">
                         <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full mb-6" style="background: color-mix(in srgb, var(--success) 10%, transparent);">
                             <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="color: var(--success);">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                         </div>
-                        
                         <h3 class="text-xl font-bold mb-2" style="color: var(--text)">Mark as Seen?</h3>
                         <p class="text-sm leading-relaxed mb-6" style="color: var(--muted)">
                             This will confirm the patient has been attended to and remove them from the active queue.
                         </p>
-
                         <div class="flex gap-3 justify-center">
                             <button type="button" onclick="closeMarkSeenModal()" 
                                     class="px-5 py-2.5 rounded-xl text-sm font-bold transition-all"
@@ -396,27 +417,6 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    // --- Tab Logic ---
-    const tabs = document.querySelectorAll('.tab-btn');
-    const panels = document.querySelectorAll('.tab-panel');
-
-    window.switchTab = (targetId) => {
-        panels.forEach(p => p.classList.add('hidden'));
-        document.getElementById(targetId).classList.remove('hidden');
-        tabs.forEach(btn => {
-            if(btn.dataset.target === '#' + targetId) {
-                btn.classList.add('active');
-                btn.style.color = '';
-            } else {
-                btn.classList.remove('active');
-                btn.style.color = 'var(--muted)';
-            }
-        });
-    };
-
-    // Initialize Tabs
-    switchTab('scheduled');
-
     // --- Toast Logic ---
     function showToast(message, type = 'success') {
         const container = document.getElementById('toast-container');
@@ -435,53 +435,64 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 3000);
     }
 
+    // --- Tab Logic ---
+    const tabs = document.querySelectorAll('.tab-btn');
+    const panels = document.querySelectorAll('.tab-panel');
+
+    window.switchTab = (targetId) => {
+        panels.forEach(p => p.classList.add('hidden'));
+        document.getElementById(targetId).classList.remove('hidden');
+        tabs.forEach(btn => {
+            if(btn.dataset.target === '#' + targetId) {
+                btn.classList.add('active');
+                btn.style.color = '';
+            } else {
+                btn.classList.remove('active');
+                btn.style.color = 'var(--muted)';
+            }
+        });
+    };
+    switchTab('scheduled');
+
+    // --- Helper: Modal Toggle ---
+    function toggleModal(modalId, show) {
+        const modal = document.getElementById(modalId);
+        const backdrop = modal.querySelector('div[id$="Backdrop"]');
+        const panel = modal.querySelector('div[id$="Panel"]');
+
+        if(show) {
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                backdrop.classList.remove('opacity-0');
+                panel.classList.remove('opacity-0', 'translate-y-4', 'sm:translate-y-0', 'sm:scale-95');
+                panel.classList.add('opacity-100', 'translate-y-0', 'sm:scale-100');
+            }, 10);
+        } else {
+            backdrop.classList.add('opacity-0');
+            panel.classList.remove('opacity-100', 'translate-y-0', 'sm:scale-100');
+            panel.classList.add('opacity-0', 'translate-y-4', 'sm:translate-y-0', 'sm:scale-95');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        }
+    }
+
     // ========================
     // 1. Call Modal Logic
     // ========================
     window.openCallModal = (id, name, phone) => {
-        const modal = document.getElementById('callModal');
-        const backdrop = document.getElementById('modalBackdrop');
-        const panel = document.getElementById('callModalPanel');
-        
         document.getElementById('callAppointmentId').value = id;
         document.getElementById('callPatientName').textContent = name;
-        
         const telLink = document.getElementById('telLink');
-        if(phone) {
-            telLink.href = `tel:${phone}`;
-            telLink.style.display = 'inline';
-        } else {
-            telLink.style.display = 'none';
-        }
-
-        modal.classList.remove('hidden');
-        setTimeout(() => {
-            backdrop.classList.remove('opacity-0');
-            panel.classList.remove('opacity-0', 'translate-y-4', 'sm:translate-y-0', 'sm:scale-95');
-            panel.classList.add('opacity-100', 'translate-y-0', 'sm:scale-100');
-        }, 10);
+        phone ? (telLink.href = `tel:${phone}`, telLink.style.display = 'inline') : telLink.style.display = 'none';
+        toggleModal('callModal', true);
     };
 
-    window.closeCallModal = () => {
-        const modal = document.getElementById('callModal');
-        const backdrop = document.getElementById('modalBackdrop');
-        const panel = document.getElementById('callModalPanel');
+    window.closeCallModal = () => toggleModal('callModal', false);
 
-        backdrop.classList.add('opacity-0');
-        panel.classList.remove('opacity-100', 'translate-y-0', 'sm:scale-100');
-        panel.classList.add('opacity-0', 'translate-y-4', 'sm:translate-y-0', 'sm:scale-95');
-
-        setTimeout(() => {
-            modal.classList.add('hidden');
-            document.getElementById('callLogForm').reset();
-        }, 300);
-    };
-
-    // Call Log Submission
     document.getElementById('callLogForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const form = e.target;
         const btn = document.getElementById('saveCallBtn');
+        const originalText = btn.innerHTML;
         
         btn.disabled = true;
         btn.innerHTML = 'Saving...';
@@ -490,22 +501,19 @@ document.addEventListener('DOMContentLoaded', () => {
             const formData = new FormData(form);
             const response = await fetch(form.action, {
                 method: 'POST',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json',
-                },
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
                 body: formData
             });
 
-            if(!response.ok) throw new Error('Failed to save log');
+            if(!response.ok) throw new Error('Failed');
 
             showToast('Call logged successfully');
             closeCallModal();
-            window.location.reload(); 
+            setTimeout(() => window.location.reload(), 300); 
         } catch (error) {
             showToast('Error saving log.', 'error');
             btn.disabled = false;
-            btn.innerHTML = '<span class="btn-text">Save Log</span>';
+            btn.innerHTML = originalText;
         }
     });
 
@@ -513,36 +521,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // 2. Referral Modal Logic
     // ========================
     window.openReferralModal = (patientId, appointmentId) => {
-        const modal = document.getElementById('referralModal');
-        const backdrop = document.getElementById('referralBackdrop');
-        const panel = document.getElementById('referralModalPanel');
-        
         document.getElementById('referralForm').reset();
         document.getElementById('referralAppointmentId').value = appointmentId;
-        
-        modal.classList.remove('hidden');
-        setTimeout(() => {
-            backdrop.classList.remove('opacity-0');
-            panel.classList.remove('opacity-0', 'translate-y-4', 'sm:translate-y-0', 'sm:scale-95');
-            panel.classList.add('opacity-100', 'translate-y-0', 'sm:scale-100');
-        }, 10);
+        toggleModal('referralModal', true);
     };
 
-    window.closeReferralModal = () => {
-        const modal = document.getElementById('referralModal');
-        const backdrop = document.getElementById('referralBackdrop');
-        const panel = document.getElementById('referralModalPanel');
+    window.closeReferralModal = () => toggleModal('referralModal', false);
 
-        backdrop.classList.add('opacity-0');
-        panel.classList.remove('opacity-100', 'translate-y-0', 'sm:scale-100');
-        panel.classList.add('opacity-0', 'translate-y-4', 'sm:translate-y-0', 'sm:scale-95');
-
-        setTimeout(() => {
-            modal.classList.add('hidden');
-        }, 300);
-    };
-
-    // Referral Submission
     document.getElementById('referralForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const form = e.target;
@@ -556,22 +541,17 @@ document.addEventListener('DOMContentLoaded', () => {
             const formData = new FormData(form);
             const response = await fetch(form.action, {
                 method: 'POST',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json',
-                },
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
                 body: formData
             });
 
-            if(!response.ok) throw new Error('Failed to submit referral');
+            if(!response.ok) throw new Error('Failed');
 
             showToast('Referral sent successfully!', 'success');
             closeReferralModal();
-            window.location.reload(); 
+            setTimeout(() => window.location.reload(), 300); 
         } catch (error) {
-            console.error(error);
             showToast('Error sending referral.', 'error');
-        } finally {
             btn.disabled = false;
             btn.innerHTML = originalText;
         }
@@ -584,31 +564,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.openMarkSeenModal = (id) => {
         appointmentToMark = id;
-        const modal = document.getElementById('markSeenModal');
-        const backdrop = document.getElementById('markSeenBackdrop');
-        const panel = document.getElementById('markSeenPanel');
-
-        modal.classList.remove('hidden');
-        setTimeout(() => {
-            backdrop.classList.remove('opacity-0');
-            panel.classList.remove('opacity-0', 'translate-y-4', 'sm:translate-y-0', 'sm:scale-95');
-            panel.classList.add('opacity-100', 'translate-y-0', 'sm:scale-100');
-        }, 10);
+        toggleModal('markSeenModal', true);
     };
 
     window.closeMarkSeenModal = () => {
-        const modal = document.getElementById('markSeenModal');
-        const backdrop = document.getElementById('markSeenBackdrop');
-        const panel = document.getElementById('markSeenPanel');
-
-        backdrop.classList.add('opacity-0');
-        panel.classList.remove('opacity-100', 'translate-y-0', 'sm:scale-100');
-        panel.classList.add('opacity-0', 'translate-y-4', 'sm:translate-y-0', 'sm:scale-95');
-
-        setTimeout(() => {
-            modal.classList.add('hidden');
-            appointmentToMark = null;
-        }, 300);
+        toggleModal('markSeenModal', false);
+        setTimeout(() => { appointmentToMark = null; }, 300);
     };
 
     window.processMarkSeen = async () => {
@@ -633,6 +594,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             showToast('Marked as seen!', 'success');
             closeMarkSeenModal();
+            
+            // RELOAD THE PAGE to move the item to history
             setTimeout(() => window.location.reload(), 300);
 
         } catch (error) {

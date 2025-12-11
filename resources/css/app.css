@@ -1,4 +1,205 @@
-.optimize-render {
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ===========================================================
+   THEME CONFIGURATION (Tailwind v4)
+   =========================================================== */
+@theme {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-body: var(--text);
+  --color-muted: var(--muted);
+  --color-brand: var(--brand);
+  --color-accent: var(--accent);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --color-border: var(--border);
+  --shadow-custom: var(--shadow);
+  --radius-custom: var(--radius);
+}
+
+/* ===========================================================
+   DESIGN TOKENS + BASE
+   =========================================================== */
+@layer base {
+  :root {
+    /* --- FIX: Changed to off-white for better eye comfort --- */
+    --bg: #f1f5f9; 
+    
+    --surface: #ffffff; /* Cards stay white */
+    --text: #111827;    /* Darker text for contrast */
+    --muted: #6b7280;
+    --brand: #3b82f6;
+    --accent: #8b5cf6;
+    --success: #10b981;
+    --danger: #ef4444;
+    --border: #e5e7eb;
+    --shadow: 0 4px 12px rgba(0,0,0,0.05);
+    --glass: rgba(255,255,255,0.8);
+    --radius: 0.75rem;
+    --loader-start: var(--brand);
+    --loader-end: var(--success);
+  }
+
+  /* Dark theme */
+  .dark {
+    --bg: #0f1724;
+    --surface: #1f2937;
+    --text: #f9fafb;
+    --muted: #9ca3af;
+    --brand: #60a5fa;
+    --accent: #a78bfa;
+    --success: #34d399;
+    --danger: #f87171;
+    --border: #374151;
+    --shadow: 0 6px 18px rgba(0,0,0,0.45);
+    --glass: rgba(17,24,39,0.55);
+  }
+
+  html, body {
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  .optimize-render {
     content-visibility: auto;
     contain-intrinsic-size: 1px 500px; /* Estimate height */
+}
+
+  /* 1. Force Inputs to use Theme Colors & Correct Color Scheme */
+  input, select, textarea {
+    background-color: var(--surface) !important;
+    color: var(--text) !important;
+    border-color: var(--border) !important;
+    color-scheme: light; 
+  }
+
+  /* 2. Dark Mode Overrides */
+  .dark input, .dark select, .dark textarea {
+    color-scheme: dark; 
+  }
+
+  /* 3. Manual Icon Backup */
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.6;
+  }
+  .dark input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    opacity: 0.9;
+  }
+}
+
+/* ===========================================================
+   COMPONENTS
+   =========================================================== */
+@layer components {
+  /* Card */
+  .card {
+    @apply bg-surface border-surface shadow-custom rounded-[--radius-custom];
+    color: var(--text);
+    transition: transform .18s ease, box-shadow .18s ease;
+    border-width: 1px;
+  }
+
+  /* Buttons */
+  .btn-primary {
+    @apply bg-brand text-white inline-flex items-center gap-2 font-medium rounded-lg py-2.5 px-4 transition-all duration-200;
+  }
+  .btn-primary:hover { filter: brightness(.95); transform: translateY(-1px); }
+
+  .btn-ghost {
+    @apply bg-transparent border border-border py-2 px-3.5 rounded-lg font-medium transition-all duration-200;
+    color: var(--text);
+  }
+  .btn-ghost:hover { 
+    background-color: color-mix(in srgb, var(--surface) 95%, black); 
+    transform: translateY(-1px); 
+  }
+
+  .btn-success { @apply bg-success text-white py-2 px-3.5 rounded-lg font-medium; }
+  .btn-danger  { @apply bg-danger text-white py-2 px-3.5 rounded-lg font-medium; }
+
+  .pill {
+    @apply inline-block px-3 py-1 rounded-full text-xs font-semibold;
+    background-color: color-mix(in srgb, var(--surface) 90%, black);
+  }
+
+  .glass {
+    background: var(--glass);
+    backdrop-filter: blur(8px);
+    border-radius: .5rem;
+    padding: .75rem;
+    border: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
+  }
+
+  /* Status Badges */
+  .status-badge { @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold capitalize; }
+  
+  .status-pending   { background: color-mix(in srgb, var(--accent) 10%, transparent); color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent); }
+  .status-confirmed { background: color-mix(in srgb, var(--brand) 10%, transparent);  color: var(--brand);  border: 1px solid color-mix(in srgb, var(--brand) 20%, transparent); }
+  .status-completed { background: color-mix(in srgb, var(--success) 10%, transparent); color: var(--success); border: 1px solid color-mix(in srgb, var(--success) 20%, transparent); }
+  .status-cancelled { background: color-mix(in srgb, var(--danger) 10%, transparent);  color: var(--danger);  border: 1px solid color-mix(in srgb, var(--danger) 20%, transparent); }
+
+  /* Skeleton */
+  .skeleton { 
+    background: linear-gradient(90deg, color-mix(in srgb, var(--surface) 95%, black) 25%, color-mix(in srgb, var(--surface) 90%, black) 50%, color-mix(in srgb, var(--surface) 95%, black) 75%); 
+    background-size: 200% 100%; 
+    animation: shimmer 1.5s infinite; 
+    @apply rounded-md h-4;
+  }
+  @keyframes shimmer { 0% { background-position: 200% 0 } 100% { background-position: -200% 0 } }
+
+  .glass-card {
+    border-radius: var(--radius);
+    background: var(--glass);
+    backdrop-filter: blur(12px);
+    border: 1px solid color-mix(in srgb, var(--border) 20%, transparent);
+  }
+
+  .floating-action { box-shadow: 0 10px 25px rgba(0,0,0,.12); transition: transform .26s cubic-bezier(.4,0,.2,1); }
+  .floating-action:hover { transform: translateY(-2px); }
+
+  .card-hover { transition: transform .26s cubic-bezier(.4,0,.2,1), box-shadow .26s; }
+  .card-hover:hover { transform: translateY(-6px); box-shadow: 0 20px 40px rgba(0,0,0,.1); }
+  .dark .card-hover:hover { box-shadow: 0 20px 40px rgba(0,0,0,.35); }
+
+  .active-result { background-color: rgba(99,102,241,0.06); outline: 2px solid rgba(99,102,241,0.12); }
+
+  /* Global Loader */
+  #global-loader .loader-card { @apply bg-surface border border-border shadow-custom; color: var(--text); }
+  #global-loader .loader-backdrop { background: color-mix(in srgb, black 45%, transparent); }
+  #global-loader-progress { background: linear-gradient(90deg, var(--loader-start), var(--loader-end)); transition: width 400ms ease-out; }
+
+  /* Search Results */
+  #searchResults { 
+    @apply bg-surface border border-border rounded-lg shadow-lg overflow-hidden; 
+    max-height: 70vh; 
+    overflow-y: auto; 
+    color: var(--text);
+  }
+  
+  #searchResults > div > a { @apply focus:outline-none; }
+  #searchResults a.active-result, #searchResults a:focus { @apply ring-2 ring-brand ring-inset; }
+
+  .avatar-gradient { background: linear-gradient(135deg, var(--brand), color-mix(in srgb, var(--brand) 60%, var(--accent))); }
+  .spinner-primary { @apply inline-block w-[18px] h-[18px] border-[3px] rounded-full animate-spin; border-color: rgba(0,0,0,0.12); border-top-color: currentColor; }
+}
+
+/* ===========================================================
+   UTILITIES
+   =========================================================== */
+@layer utilities {
+  .lhims-container { max-width: 1100px; margin: 1.5rem auto; padding: 0 1rem; }
+  .page-overlay-gradient { background: linear-gradient(180deg, transparent 0%, color-mix(in srgb, var(--bg) 85%, transparent) 60%); pointer-events: none; }
+  .site-topbar { background: color-mix(in srgb, var(--bg) 98%, transparent); border-bottom: 1px solid var(--border); }
+  #mobile-sidebar { @apply bg-surface border-r border-border shadow-custom; color: var(--text); }
+  footer.site-footer { background: color-mix(in srgb, var(--bg) 85%, transparent); color: var(--muted); border-top: 1px solid var(--border); }
+  .site-toast { @apply bg-brand text-white; }
+  .notif-unread { background: rgba(0,0,0,0.02); font-weight: 600; }
+  .opacity-60 { opacity: 0.6 !important; }
 }

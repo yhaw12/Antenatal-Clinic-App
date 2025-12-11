@@ -25,7 +25,7 @@
             <a href="{{ url()->current() }}" class="absolute right-2 top-1/2 -translate-y-1/2 text-xs hover:underline" style="color:var(--muted)">Clear</a>
         @endif
     </div>
-    <a href="{{ route('patients.create') }}" class="btn-primary whitespace-nowrap px-4 py-2 rounded" style="background:var(--brand); color:white;">New Patient</a>
+    {{-- <a href="{{ route('patients.create') }}" class="btn-primary whitespace-nowrap px-4 py-2 rounded" style="background:var(--brand); color:white;">New Patient</a> --}}
   </form>
 </div>
 

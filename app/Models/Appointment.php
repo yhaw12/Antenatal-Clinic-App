@@ -23,6 +23,13 @@ class Appointment extends Model
         return $this->belongsTo(Patient::class);
     }
 
+    public function callLogs()
+    {
+        return $this->hasMany(CallLog::class);
+    }
+
+   
+
 //     public static function getNextAvailableSlot($date)
 // {
 //     $startTime = \Carbon\Carbon::parse('08:30:00');

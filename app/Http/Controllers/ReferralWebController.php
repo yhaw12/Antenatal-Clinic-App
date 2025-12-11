@@ -52,6 +52,11 @@ class ReferralWebController extends Controller
             Appointment::where('id', $data['appointment_id'])->update(['status' => 'seen']);
         }
 
+        if (!empty($data['appointment_id'])) {
+            // Set status to 'referred' so the specific "Referred" badge/color shows up
+            Appointment::where('id', $data['appointment_id'])->update(['status' => 'referred']);
+        }
+
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json(['success' => true, 'message' => 'Referral note saved']);
         }

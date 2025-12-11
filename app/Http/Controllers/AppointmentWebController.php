@@ -165,4 +165,7 @@ class AppointmentWebController extends Controller
             return back()->with('error', 'Could not update appointment')->withInput();
         }
     }
+
+
+    
 }
