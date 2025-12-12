@@ -195,6 +195,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/exports', [ExportWebController::class, 'index'])->name('exports.index');
         Route::post('/exports/queue', [ExportWebController::class, 'queue'])->name('exports.queue');
         Route::get('/exports/history', [ExportWebController::class, 'history'])->name('exports.history');
+        // In routes/web.php
+        Route::post('/reports/export', [App\Http\Controllers\ReportWebController::class, 'export'])->name('exports.queue');
 
         // Activity logs
         Route::prefix('admin')->group(function () {
